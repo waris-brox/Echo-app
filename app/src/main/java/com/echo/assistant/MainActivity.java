@@ -151,7 +151,7 @@ public class MainActivity extends Activity {
         }
     }
 
-    protected void onRequestPermissionsResult(int code,
+    public void onRequestPermissionsResult(int code,
         String[] perms, int[] results) {
         super.onRequestPermissionsResult(code, perms, results);
         // App continues even if permissions denied
