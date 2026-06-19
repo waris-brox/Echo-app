@@ -53,35 +53,9 @@ public class EchoAccessibility extends AccessibilityService {
         registerReceiver(receiver, filter);
     }
 
-    // Take screenshot
     public void takeScreenshot() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            takeScreenshot(
-                AccessibilityService.TAKE_SCREENSHOT_SOFT_KEY,
-                getMainExecutor(),
-                new TakeScreenshotCallback() {
-                    @Override
-                    public void onSuccess(ScreenshotResult result) {
-                        android.graphics.Bitmap bm =
-                            android.graphics.Bitmap.wrapHardwareBuffer(
-                                result.getHardwareBuffer(),
-                                result.getColorSpace());
-                        android.provider.MediaStore.Images.Media.insertImage(
-                            getContentResolver(), bm,
-                            "Echo_Screenshot_" + System.currentTimeMillis(),
-                            "Screenshot by Echo");
-                        result.getHardwareBuffer().close();
-                    }
-                    @Override
-                    public void onFailure(int i) {
-                        performGlobalAction(GLOBAL_ACTION_TAKE_SCREENSHOT);
-                    }
-                }
-            );
-        } else {
-            performGlobalAction(GLOBAL_ACTION_TAKE_SCREENSHOT);
-        }
-    }
+    performGlobalAction(GLOBAL_ACTION_HOME);
+}
 
     // Send WhatsApp message by clicking send button
     public void sendWhatsAppMessage(String text) {

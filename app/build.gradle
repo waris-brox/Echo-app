@@ -1,14 +1,14 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 33
+    compileSdkVersion 34
     buildToolsVersion "33.0.2"
     namespace "com.echo.assistant"
 
     defaultConfig {
         applicationId "com.echo.assistant"
         minSdkVersion 24
-        targetSdkVersion 33
+        targetSdkVersion 34
         versionCode 1
         versionName "1.0"
     }
