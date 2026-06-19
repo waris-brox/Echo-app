@@ -1,0 +1,15 @@
+.gradle
+build
+app/build
+local.properties
+*.keystore
+*.jks
+.idea
+*.iml
+captures
+.externalNativeBuild
+.cxx
+dem.py
+*.py
+EchoTTS/
+piper/

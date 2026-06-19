@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Echo</string>
+    <string name="tagline">Your voice. Our echo.</string>
+    <string name="ask_hint">Ask here...</string>
+    <string name="listening">Listening...</string>
+    <string name="tap_to_stop">Tap to stop</string>
+</resources>
