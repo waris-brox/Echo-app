@@ -36,7 +36,7 @@ public class EchoAccessibility extends AccessibilityService {
                 if (action == null) return;
                 switch (action) {
                     case "screenshot":
-                        takeScreenshot(); break;
+                        takeEchoScreenshot(); break;
                     case "whatsapp_send":
                         sendWhatsAppMessage(
                             intent.getStringExtra("text")); break;
@@ -50,24 +50,47 @@ public class EchoAccessibility extends AccessibilityService {
             }
         };
         IntentFilter filter = new IntentFilter("com.echo.ACCESSIBILITY");
-        registerReceiver(receiver, filter);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED);
+        } else {
+            registerReceiver(receiver, filter);
+        }
     }
 
-    public void takeScreenshot() {
-    performGlobalAction(GLOBAL_ACTION_HOME);
-}
+    // Renamed from takeScreenshot() to avoid clashing with the
+    // system's own AccessibilityService.takeScreenshot() method.
+    public void takeEchoScreenshot() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            takeScreenshot(
+                android.view.Display.DEFAULT_DISPLAY,
+                getMainExecutor(),
+                new TakeScreenshotCallback() {
+                    @Override
+                    public void onSuccess(ScreenshotResult result) {
+                        android.util.Log.d("ECHO", "Screenshot captured successfully");
+                    }
+                    @Override
+                    public void onFailure(int errorCode) {
+                        android.util.Log.e("ECHO", "Screenshot failed, code: " + errorCode);
+                    }
+                });
+        } else {
+            android.util.Log.e("ECHO", "Screenshot API requires Android 11+ (this device is older)");
+        }
+    }
 
     // Send WhatsApp message by clicking send button
     public void sendWhatsAppMessage(String text) {
         if (text == null) return;
         AccessibilityNodeInfo root = getRootInActiveWindow();
         if (root == null) return;
-        // Find send button in WhatsApp
         List<AccessibilityNodeInfo> sendBtns =
             root.findAccessibilityNodeInfosByViewId(
                 "com.whatsapp:id/send");
         if (sendBtns != null && !sendBtns.isEmpty()) {
             sendBtns.get(0).performAction(AccessibilityNodeInfo.ACTION_CLICK);
+        } else {
+            android.util.Log.e("ECHO", "WhatsApp send button not found - UI may have changed or chat not open");
         }
     }
 
