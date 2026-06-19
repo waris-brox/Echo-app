@@ -6,6 +6,7 @@ import android.app.NotificationManager;
 import android.app.Service;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.media.AudioManager;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
@@ -22,12 +23,24 @@ public class EchoWakeService extends Service {
     private Handler h = new Handler(Looper.getMainLooper());
     private boolean listening = false;
     private boolean running = false;
+    private AudioManager audioManager;
 
     public int onStartCommand(Intent i, int f, int s) {
         running = true;
+        audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
         showNotification();
         h.postDelayed(this::startListening, 1000);
         return START_STICKY;
+    }
+
+    void muteSystemBeeps(boolean mute) {
+        try {
+            if (audioManager != null) {
+                audioManager.setStreamMute(AudioManager.STREAM_SYSTEM, mute);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     void startListening() {
@@ -57,6 +70,14 @@ public class EchoWakeService extends Service {
             i.putExtra(
                 RecognizerIntent.EXTRA_CALLING_PACKAGE,
                 getPackageName());
+            i.putExtra(
+                RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
+            i.putExtra(
+                "android.speech.extra.DICTATION_MODE", true);
+            i.putExtra(
+                RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 3000);
+            i.putExtra(
+                RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 3000);
 
             sr = SpeechRecognizer
                 .createSpeechRecognizer(this);
@@ -85,7 +106,7 @@ public class EchoWakeService extends Service {
                         }
                     }
                     h.postDelayed(
-                        () -> startListening(), 500);
+                        () -> startListening(), 1500);
                 }
                 public void onPartialResults(Bundle b) {
                     ArrayList<String> r =
@@ -104,16 +125,23 @@ public class EchoWakeService extends Service {
                 }
                 public void onError(int e) {
                     listening = false;
+                    // Don't hammer restart on common silence/no-match errors
+                    long delay = (e == SpeechRecognizer.ERROR_NO_MATCH
+                        || e == SpeechRecognizer.ERROR_SPEECH_TIMEOUT)
+                        ? 1500 : 3000;
                     h.postDelayed(
-                        () -> startListening(), 2000);
+                        () -> startListening(), delay);
                 }
                 public void onEvent(int t, Bundle b) {}
             });
 
+            muteSystemBeeps(true);
             sr.startListening(i);
+            h.postDelayed(() -> muteSystemBeeps(false), 500);
 
         } catch (Exception e) {
             e.printStackTrace();
+            muteSystemBeeps(false);
             h.postDelayed(this::startListening, 3000);
         }
     }
@@ -167,6 +195,7 @@ public class EchoWakeService extends Service {
     public void onDestroy() {
         super.onDestroy();
         running = false;
+        muteSystemBeeps(false);
         try {
             if (sr != null) sr.destroy();
         } catch (Exception e) {
