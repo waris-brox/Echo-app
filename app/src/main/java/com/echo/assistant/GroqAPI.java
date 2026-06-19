@@ -1,7 +1,5 @@
 package com.echo.assistant;
 
-import android.content.Context;
-import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -9,32 +7,17 @@ import java.io.*;
 import java.net.*;
 
 public class GroqAPI {
-
+    public static String API_KEY = "";
     private static final String URL = "https://api.groq.com/openai/v1/chat/completions";
     private static final String MODEL = "llama3-70b-8192";
-    private static final String PREFS = "echo_prefs";
-    private static final String KEY_PREF = "groq_api_key";
 
     public interface Callback {
         void onSuccess(String reply, String action);
         void onError(String error);
     }
 
-    // Call this once, e.g. in MainActivity after user saves the key in Settings
-    public static void saveApiKey(Context ctx, String key) {
-        SharedPreferences sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
-        sp.edit().putString(KEY_PREF, key.trim()).apply();
-    }
-
-    public static String getApiKey(Context ctx) {
-        SharedPreferences sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
-        return sp.getString(KEY_PREF, "");
-    }
-
-    public static void ask(Context ctx, JSONArray history, String message, Callback cb) {
-        String apiKey = getApiKey(ctx);
-
-        if (apiKey == null || apiKey.trim().isEmpty()) {
+    public static void ask(JSONArray history, String message, Callback cb) {
+        if (API_KEY == null || API_KEY.trim().isEmpty()) {
             cb.onError("Boss, Groq API key set nahi hai. Settings me jaake daal do.");
             return;
         }
@@ -59,9 +42,10 @@ public class GroqAPI {
                     body.put("max_tokens", 512);
                     body.put("temperature", 0.8);
 
-                    HttpURLConnection c = (HttpURLConnection) new java.net.URL(URL).openConnection();
+                    HttpURLConnection c = (HttpURLConnection)
+                        new java.net.URL(URL).openConnection();
                     c.setRequestMethod("POST");
-                    c.setRequestProperty("Authorization", "Bearer " + apiKey.trim());
+                    c.setRequestProperty("Authorization", "Bearer " + API_KEY.trim());
                     c.setRequestProperty("Content-Type", "application/json");
                     c.setDoOutput(true);
                     c.setConnectTimeout(15000);
@@ -72,7 +56,8 @@ public class GroqAPI {
                     InputStream stream = (status >= 200 && status < 300)
                         ? c.getInputStream() : c.getErrorStream();
 
-                    BufferedReader br = new BufferedReader(new InputStreamReader(stream, "UTF-8"));
+                    BufferedReader br = new BufferedReader(
+                        new InputStreamReader(stream, "UTF-8"));
                     StringBuilder sb = new StringBuilder();
                     String line;
                     while ((line = br.readLine()) != null) sb.append(line);
