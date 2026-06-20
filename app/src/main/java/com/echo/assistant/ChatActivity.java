@@ -33,49 +33,61 @@ public class ChatActivity extends Activity {
 
     protected void onCreate(Bundle s) {
         super.onCreate(s);
-
         try {
             setContentView(R.layout.activity_chat);
+            layoutMessages = findViewById(
+                R.id.layout_messages);
+            scrollChat = findViewById(
+                R.id.scroll_chat);
+            etInput = findViewById(R.id.et_input);
 
-            layoutMessages = findViewById(R.id.layout_messages);
-            scrollChat     = findViewById(R.id.scroll_chat);
-            etInput        = findViewById(R.id.et_input);
-
-            chatHistory  = ChatHistory.load(this);
-            GroqAPI.API_KEY = AppPrefs.getApiKey(this);
-            voiceEnabled = AppPrefs.isVoiceEnabled(this);
+            chatHistory = ChatHistory.load(this);
+            GroqAPI.API_KEY =
+                AppPrefs.getApiKey(this);
+            voiceEnabled =
+                AppPrefs.isVoiceEnabled(this);
 
             initTTS();
 
             if (findViewById(R.id.btn_back) != null)
                 findViewById(R.id.btn_back)
-                    .setOnClickListener(v -> finish());
+                    .setOnClickListener(
+                    v -> finish());
 
             if (findViewById(R.id.btn_menu) != null)
-                findViewById(R.id.btn_menu).setOnClickListener(v ->
-                    startActivity(new Intent(this,
-                        SettingsActivity.class)));
+                findViewById(R.id.btn_menu)
+                    .setOnClickListener(v ->
+                    startActivity(new Intent(
+                    this,
+                    SettingsActivity.class)));
 
             if (findViewById(R.id.btn_send) != null)
                 findViewById(R.id.btn_send)
-                    .setOnClickListener(v -> sendMessage());
+                    .setOnClickListener(
+                    v -> sendMessage());
 
             if (findViewById(R.id.btn_mic) != null)
                 findViewById(R.id.btn_mic)
-                    .setOnClickListener(v -> startVoice());
+                    .setOnClickListener(
+                    v -> startVoice());
 
             if (etInput != null) {
-                etInput.setOnEditorActionListener((v, a, e) -> {
+                etInput.setOnEditorActionListener(
+                    (v, a, e) -> {
                     sendMessage();
                     return true;
                 });
             }
 
             String firstMsg = getIntent() != null
-                ? getIntent().getStringExtra("message") : null;
-            if (firstMsg != null && !firstMsg.isEmpty()) {
+                ? getIntent().getStringExtra(
+                "message") : null;
+            if (firstMsg != null
+                && !firstMsg.isEmpty()) {
                 new Handler(Looper.getMainLooper())
-                    .postDelayed(() -> sendToEcho(firstMsg), 400);
+                    .postDelayed(
+                    () -> sendToEcho(firstMsg),
+                    400);
             }
 
         } catch (Exception e) {
@@ -88,16 +100,28 @@ public class ChatActivity extends Activity {
 
     void initTTS() {
         try {
-            tts = new TextToSpeech(this, status -> {
-                if (status == TextToSpeech.SUCCESS) {
-                    int r = tts.setLanguage(new Locale("en", "IN"));
-                    if (r == TextToSpeech.LANG_MISSING_DATA
-                        || r == TextToSpeech.LANG_NOT_SUPPORTED) {
-                        tts.setLanguage(Locale.ENGLISH);
+            tts = new TextToSpeech(this,
+                status -> {
+                try {
+                    if (status ==
+                        TextToSpeech.SUCCESS) {
+                        int r = tts.setLanguage(
+                            new Locale("en", "IN"));
+                        if (r ==
+                            TextToSpeech
+                            .LANG_MISSING_DATA
+                            || r ==
+                            TextToSpeech
+                            .LANG_NOT_SUPPORTED) {
+                            tts.setLanguage(
+                                Locale.ENGLISH);
+                        }
+                        tts.setSpeechRate(0.95f);
+                        tts.setPitch(1.1f);
+                        ttsReady = true;
                     }
-                    tts.setSpeechRate(0.95f);
-                    tts.setPitch(1.1f);
-                    ttsReady = true;
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
             });
         } catch (Exception e) {
@@ -110,7 +134,8 @@ public class ChatActivity extends Activity {
             if (!voiceEnabled) return;
             if (ttsReady && tts != null) {
                 tts.speak(text,
-                    TextToSpeech.QUEUE_FLUSH, null, null);
+                    TextToSpeech.QUEUE_FLUSH,
+                    null, null);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -119,7 +144,10 @@ public class ChatActivity extends Activity {
 
     void stopSpeaking() {
         try {
-            if (tts != null && tts.isSpeaking()) tts.stop();
+            if (tts != null
+                && tts.isSpeaking()) {
+                tts.stop();
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -128,7 +156,8 @@ public class ChatActivity extends Activity {
     void sendMessage() {
         try {
             if (etInput == null) return;
-            String text = etInput.getText().toString().trim();
+            String text = etInput.getText()
+                .toString().trim();
             if (text.isEmpty()) return;
             etInput.setText("");
             stopSpeaking();
@@ -142,10 +171,11 @@ public class ChatActivity extends Activity {
         try {
             if (GroqAPI.API_KEY == null
                 || GroqAPI.API_KEY.isEmpty()) {
-                addEchoBubble("Boss please set your Groq API key"
-                    + " in Settings first!");
-                speakText("Boss please set your Groq API key"
-                    + " in Settings first!");
+                String msg = "Boss please set "
+                    + "your Groq API key "
+                    + "in Settings first!";
+                addEchoBubble(msg);
+                speakText(msg);
                 return;
             }
 
@@ -158,35 +188,85 @@ public class ChatActivity extends Activity {
 
             GroqAPI.ask(chatHistory, enriched,
                 new GroqAPI.Callback() {
-                    public void onSuccess(String reply,
-                        String action) {
-                        try {
-                            if (layoutMessages != null)
-                                layoutMessages.removeView(typing);
-                            addEchoBubble(reply);
-                            ChatHistory.add(ChatActivity.this,
-                                "assistant", reply);
-                            speakText(reply);
-                            if (action != null
-                                && !action.isEmpty()) {
-                                DeviceActions.handle(
-                                    ChatActivity.this, action);
+                public void onSuccess(
+                    String reply,
+                    String action) {
+                    try {
+                        runOnUiThread(() -> {
+                            try {
+                                if (layoutMessages
+                                    != null)
+                                    layoutMessages
+                                    .removeView(
+                                    typing);
+
+                                addEchoBubble(
+                                    reply);
+                                ChatHistory.add(
+                                    ChatActivity
+                                    .this,
+                                    "assistant",
+                                    reply);
+                                speakText(reply);
+
+                                if (action != null
+                                    && !action
+                                    .isEmpty()) {
+                                    String fa =
+                                        action;
+                                    DeviceActions
+                                    .handle(
+                                    ChatActivity
+                                    .this,
+                                    fa,
+                                    (success,
+                                    msg) -> {
+                                        runOnUiThread(
+                                        () -> {
+                                        if (!success
+                                        && msg !=
+                                        null
+                                        && !msg
+                                        .isEmpty()){
+                                            addEchoBubble(
+                                            "⚠️ "
+                                            + msg);
+                                            speakText(
+                                            msg);
+                                        }
+                                        });
+                                    });
+                                }
+                            } catch (Exception e) {
+                                e.printStackTrace();
                             }
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
+                        });
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
-                    public void onError(String error) {
-                        try {
-                            if (layoutMessages != null)
-                                layoutMessages.removeView(typing);
-                            addEchoBubble(error);
-                            speakText(error);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
+                }
+
+                public void onError(String error) {
+                    try {
+                        runOnUiThread(() -> {
+                            try {
+                                if (layoutMessages
+                                    != null)
+                                    layoutMessages
+                                    .removeView(
+                                    typing);
+                                addEchoBubble(
+                                    error);
+                                speakText(error);
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        });
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
-                });
+                }
+            });
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -196,32 +276,65 @@ public class ChatActivity extends Activity {
     String addContext(String text) {
         try {
             String lower = text.toLowerCase();
+
             if (lower.contains("battery")) {
                 try {
-                    IntentFilter f = new IntentFilter(
-                        Intent.ACTION_BATTERY_CHANGED);
-                    Intent bi = registerReceiver(null, f);
+                    IntentFilter f =
+                        new IntentFilter(
+                        Intent
+                        .ACTION_BATTERY_CHANGED);
+                    Intent bi =
+                        registerReceiver(null, f);
                     int lvl = bi.getIntExtra(
-                        BatteryManager.EXTRA_LEVEL, -1);
+                        BatteryManager
+                        .EXTRA_LEVEL, -1);
                     int scl = bi.getIntExtra(
-                        BatteryManager.EXTRA_SCALE, -1);
-                    int pct = (int)((lvl / (float)scl) * 100);
-                    return text + " [Battery: " + pct + "%]";
-                } catch (Exception e) { return text; }
+                        BatteryManager
+                        .EXTRA_SCALE, -1);
+                    int pct = (int)(
+                        (lvl / (float) scl)
+                        * 100);
+                    boolean charging =
+                        bi.getIntExtra(
+                        BatteryManager
+                        .EXTRA_STATUS, -1)
+                        == BatteryManager
+                        .BATTERY_STATUS_CHARGING;
+                    return text
+                        + " [Battery: " + pct
+                        + "% "
+                        + (charging
+                        ? "charging"
+                        : "not charging")
+                        + "]";
+                } catch (Exception e) {
+                    return text;
+                }
             }
+
             if (lower.contains("time")
                 || lower.contains("date")
-                || lower.contains("day")) {
-                String dt = new SimpleDateFormat(
-                    "EEEE dd MMMM yyyy hh:mm a",
-                    Locale.getDefault()).format(new Date());
-                return text + " [Now: " + dt + "]";
+                || lower.contains("day")
+                || lower.contains("today")
+                || lower.contains("kitne baje")) {
+                String dt =
+                    new SimpleDateFormat(
+                    "EEEE dd MMMM yyyy"
+                    + ", hh:mm a",
+                    Locale.getDefault())
+                    .format(new Date());
+                return text
+                    + " [Current: " + dt + "]";
             }
+
             if (lower.contains("storage")
-                || lower.contains("space")) {
+                || lower.contains("space")
+                || lower.contains("memory")) {
                 return text + " ["
-                    + AppPrefs.getStorageInfo() + "]";
+                    + AppPrefs.getStorageInfo()
+                    + "]";
             }
+
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -234,8 +347,10 @@ public class ChatActivity extends Activity {
             View v = getLayoutInflater().inflate(
                 R.layout.item_bubble_user,
                 layoutMessages, false);
-            TextView msg = v.findViewById(R.id.tv_message);
-            TextView time = v.findViewById(R.id.tv_time);
+            TextView msg =
+                v.findViewById(R.id.tv_message);
+            TextView time =
+                v.findViewById(R.id.tv_time);
             if (msg != null) msg.setText(text);
             if (time != null)
                 time.setText("You · " + getTime());
@@ -252,11 +367,14 @@ public class ChatActivity extends Activity {
             View v = getLayoutInflater().inflate(
                 R.layout.item_bubble_echo,
                 layoutMessages, false);
-            TextView msg = v.findViewById(R.id.tv_message);
-            TextView time = v.findViewById(R.id.tv_time);
+            TextView msg =
+                v.findViewById(R.id.tv_message);
+            TextView time =
+                v.findViewById(R.id.tv_time);
             if (msg != null) msg.setText(text);
             if (time != null)
-                time.setText("Echo · " + getTime());
+                time.setText(
+                "Echo · " + getTime());
             layoutMessages.addView(v);
             scrollBottom();
         } catch (Exception e) {
@@ -266,11 +384,13 @@ public class ChatActivity extends Activity {
 
     View addTyping() {
         try {
-            if (layoutMessages == null) return new View(this);
+            if (layoutMessages == null)
+                return new View(this);
             TextView tv = new TextView(this);
             tv.setText("Echo is thinking...");
             tv.setTextColor(
-                getResources().getColor(R.color.text_dim));
+                getResources().getColor(
+                R.color.text_dim));
             tv.setTextSize(13);
             tv.setPadding(32, 16, 32, 8);
             layoutMessages.addView(tv);
@@ -285,32 +405,47 @@ public class ChatActivity extends Activity {
     void scrollBottom() {
         try {
             if (scrollChat != null)
-                scrollChat.post(() ->
+                scrollChat.post(() -> {
+                try {
                     scrollChat.fullScroll(
-                        ScrollView.FOCUS_DOWN));
+                        ScrollView.FOCUS_DOWN);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            });
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
     String getTime() {
-        return new SimpleDateFormat("hh:mm a",
-            Locale.getDefault()).format(new Date());
+        return new SimpleDateFormat(
+            "hh:mm a",
+            Locale.getDefault())
+            .format(new Date());
     }
 
     void startVoice() {
         try {
             stopSpeaking();
             Intent i = new Intent(
-                RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+                RecognizerIntent
+                .ACTION_RECOGNIZE_SPEECH);
             i.putExtra(
-                RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+                RecognizerIntent
+                .EXTRA_LANGUAGE_MODEL,
+                RecognizerIntent
+                .LANGUAGE_MODEL_FREE_FORM);
             i.putExtra(
-                RecognizerIntent.EXTRA_LANGUAGE, "en-IN");
+                RecognizerIntent.EXTRA_LANGUAGE,
+                "en-IN");
             i.putExtra(
                 RecognizerIntent.EXTRA_PROMPT,
                 "Listening Boss...");
+            i.putExtra(
+                RecognizerIntent
+                .EXTRA_PARTIAL_RESULTS,
+                true);
             startActivityForResult(i, 100);
         } catch (Exception e) {
             Toast.makeText(this,
@@ -319,19 +454,34 @@ public class ChatActivity extends Activity {
         }
     }
 
-    protected void onActivityResult(int req, int res,
-        Intent data) {
+    protected void onActivityResult(
+        int req, int res, Intent data) {
         super.onActivityResult(req, res, data);
         try {
-            if (req == 100 && res == RESULT_OK
+            if (req == 100
+                && res == RESULT_OK
                 && data != null) {
                 ArrayList<String> r =
                     data.getStringArrayListExtra(
-                        RecognizerIntent.EXTRA_RESULTS);
-                if (r != null && !r.isEmpty()) {
+                    RecognizerIntent
+                    .EXTRA_RESULTS);
+                if (r != null
+                    && !r.isEmpty()) {
                     sendToEcho(r.get(0));
                 }
             }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    protected void onResume() {
+        super.onResume();
+        try {
+            GroqAPI.API_KEY =
+                AppPrefs.getApiKey(this);
+            voiceEnabled =
+                AppPrefs.isVoiceEnabled(this);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -345,16 +495,6 @@ public class ChatActivity extends Activity {
                 tts.shutdown();
                 tts = null;
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    protected void onResume() {
-        super.onResume();
-        try {
-            GroqAPI.API_KEY = AppPrefs.getApiKey(this);
-            voiceEnabled = AppPrefs.isVoiceEnabled(this);
         } catch (Exception e) {
             e.printStackTrace();
         }
