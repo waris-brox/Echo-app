@@ -87,58 +87,60 @@ public class EchoAccessibility
     public void doScreenshot() {
         try {
             if (Build.VERSION.SDK_INT >= 30) {
-                // Use TAKE_SCREENSHOT_SOFT_KEY
-                // which works on API 30+
+                // Must use integer value 1
+                // TAKE_SCREENSHOT_SOFT_KEY = 1
                 takeScreenshot(
-                    TAKE_SCREENSHOT_SOFT_KEY,
+                    1,
                     getMainExecutor(),
-                    new TakeScreenshotCallback(){
+                    new TakeScreenshotCallback() {
                     public void onSuccess(
-                        ScreenshotResult result){
+                        ScreenshotResult result) {
                         try {
                             android.graphics
-                            .Bitmap bm =
-                            android.graphics
-                            .Bitmap
-                            .wrapHardwareBuffer(
-                            result
-                            .getHardwareBuffer(),
-                            result
-                            .getColorSpace());
+                                .Bitmap bm =
+                                android.graphics
+                                .Bitmap
+                                .wrapHardwareBuffer(
+                                result
+                                .getHardwareBuffer(),
+                                result
+                                .getColorSpace());
                             android.provider
-                            .MediaStore
-                            .Images.Media
-                            .insertImage(
-                            getContentResolver(),
-                            bm,
-                            "Echo_Screenshot_"
-                            + System
-                            .currentTimeMillis(),
-                            "Echo Screenshot");
+                                .MediaStore
+                                .Images.Media
+                                .insertImage(
+                                getContentResolver(),
+                                bm,
+                                "Echo_Screenshot_"
+                                + System
+                                .currentTimeMillis(),
+                                "Echo Screenshot");
                             result
-                            .getHardwareBuffer()
-                            .close();
+                                .getHardwareBuffer()
+                                .close();
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
                     }
                     public void onFailure(
                         int errorCode) {
-                        // Fallback
-                        performGlobalAction(
-                        GLOBAL_ACTION_TAKE_SCREENSHOT);
+                        try {
+                            performGlobalAction(
+                            GLOBAL_ACTION_TAKE_SCREENSHOT);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
                     }
                 });
             } else {
-                // Android 9 and below
                 performGlobalAction(
-                GLOBAL_ACTION_TAKE_SCREENSHOT);
+                    GLOBAL_ACTION_TAKE_SCREENSHOT);
             }
         } catch (Exception e) {
             e.printStackTrace();
             try {
                 performGlobalAction(
-                GLOBAL_ACTION_TAKE_SCREENSHOT);
+                    GLOBAL_ACTION_TAKE_SCREENSHOT);
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
@@ -177,7 +179,6 @@ public class EchoAccessibility
                 }
             }
 
-            // Try by text
             String[] texts = {
                 "Send", "send", "SEND"};
             for (String text : texts) {
@@ -189,7 +190,7 @@ public class EchoAccessibility
                     if (nodes != null) {
                         for (AccessibilityNodeInfo
                             n : nodes) {
-                            if (n.isClickable()){
+                            if (n.isClickable()) {
                                 n.performAction(
                                 AccessibilityNodeInfo
                                 .ACTION_CLICK);
