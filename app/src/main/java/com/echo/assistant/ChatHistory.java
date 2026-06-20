@@ -14,22 +14,10 @@ public class ChatHistory {
         "echo_chat";
     private static final String KEY =
         "history";
-    private static final String SESSIONS =
-        "sessions";
     private static final int MAX = 50;
 
-    public static JSONArray load(Context ctx) {
-        try {
-            String s = ctx
-                .getSharedPreferences(
-                PREFS, 0)
-                .getString(KEY, "[]");
-            return new JSONArray(s);
-        } catch (Exception e) {
-            return new JSONArray();
-        }
-    }
-
+    // Save message with timestamp
+    // stored separately from role/content
     public static void add(Context ctx,
         String role, String content) {
         try {
@@ -37,7 +25,10 @@ public class ChatHistory {
             JSONObject m = new JSONObject();
             m.put("role", role);
             m.put("content", content);
-            m.put("timestamp",
+            // Store timestamp in separate
+            // field that we strip before
+            // sending to Groq
+            m.put("ts",
                 new SimpleDateFormat(
                 "dd/MM/yyyy HH:mm",
                 Locale.getDefault())
@@ -54,13 +45,59 @@ public class ChatHistory {
         }
     }
 
+    // Load full history with timestamps
+    // for display in history screen
+    public static JSONArray load(Context ctx) {
+        try {
+            String s = ctx
+                .getSharedPreferences(
+                PREFS, 0)
+                .getString(KEY, "[]");
+            return new JSONArray(s);
+        } catch (Exception e) {
+            return new JSONArray();
+        }
+    }
+
+    // Load clean history for Groq API
+    // Only role and content no extras
+    public static JSONArray loadForGroq(
+        Context ctx) {
+        try {
+            JSONArray all = load(ctx);
+            JSONArray clean = new JSONArray();
+            for (int i = 0;
+                i < all.length(); i++) {
+                try {
+                    JSONObject orig =
+                        all.getJSONObject(i);
+                    // Only send role
+                    // and content to Groq
+                    JSONObject msg =
+                        new JSONObject();
+                    msg.put("role",
+                        orig.getString("role"));
+                    msg.put("content",
+                        orig.getString(
+                        "content"));
+                    clean.put(msg);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            return clean;
+        } catch (Exception e) {
+            return new JSONArray();
+        }
+    }
+
     public static void clear(Context ctx) {
         ctx.getSharedPreferences(PREFS, 0)
             .edit().remove(KEY).apply();
     }
 
-    // Get history for display
-    // Returns only user messages
+    // Get only user messages for
+    // history screen display
     public static JSONArray getUserMessages(
         Context ctx) {
         try {
@@ -68,11 +105,15 @@ public class ChatHistory {
             JSONArray user = new JSONArray();
             for (int i = 0;
                 i < all.length(); i++) {
-                JSONObject m =
-                    all.getJSONObject(i);
-                if ("user".equals(
-                    m.optString("role"))) {
-                    user.put(m);
+                try {
+                    JSONObject m =
+                        all.getJSONObject(i);
+                    if ("user".equals(
+                        m.optString("role"))) {
+                        user.put(m);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
             }
             return user;

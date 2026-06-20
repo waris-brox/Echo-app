@@ -41,7 +41,7 @@ public class ChatActivity extends Activity {
                 R.id.scroll_chat);
             etInput = findViewById(R.id.et_input);
 
-            chatHistory = ChatHistory.load(this);
+            chatHistory = ChatHistory.loadForGroq(this);
             GroqAPI.API_KEY =
                 AppPrefs.getApiKey(this);
             voiceEnabled =
@@ -184,7 +184,7 @@ public class ChatActivity extends Activity {
             View typing = addTyping();
 
             ChatHistory.add(this, "user", text);
-            chatHistory = ChatHistory.load(this);
+            chatHistory = ChatHistory.loadForGroq(this);
 
             GroqAPI.ask(chatHistory, enriched,
                 new GroqAPI.Callback() {
