@@ -16,6 +16,15 @@ public class MainActivity extends Activity {
     private EditText etInput;
     private static final int PERM_CODE = 200;
 
+	private void requestSystemSettingsPermission() {
+    if (!android.provider.Settings.System.canWrite(this)) {
+        Intent intent = new Intent(
+                android.provider.Settings.ACTION_MANAGE_WRITE_SETTINGS,
+                android.net.Uri.parse("package:" + getPackageName())
+        );
+        startActivity(intent);
+    }
+}
     protected void onCreate(Bundle s) {
         super.onCreate(s);
 
