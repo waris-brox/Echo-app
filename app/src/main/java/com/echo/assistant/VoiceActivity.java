@@ -15,7 +15,7 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 import java.util.ArrayList;
-import java.util.Bundle;
+import android.os.Bundle;
 
 public class VoiceActivity extends Activity {
 

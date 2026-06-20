@@ -22,13 +22,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
-public class DeviceActions {
-
-    // Result callback so Echo can report real status
-    public interface Result {
-        void onResult(boolean success, String message);
-    }
-
     public static void handle(Context ctx, String json) {
         handle(ctx, json, (success, msg) -> {
             if (!success) {

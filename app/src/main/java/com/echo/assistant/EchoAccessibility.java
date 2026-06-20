@@ -73,8 +73,8 @@ public class EchoAccessibility extends AccessibilityService {
         try {
             if (Build.VERSION.SDK_INT >= 30) {
                 takeScreenshot(
-                    TAKE_SCREENSHOT_SOFT_KEY,
-                    getMainExecutor(),
+    android.view.WindowManager.TAKE_SCREENSHOT_FULLSCREEN,
+    getMainExecutor(),
                     new TakeScreenshotCallback() {
                     public void onSuccess(
                         ScreenshotResult result) {
