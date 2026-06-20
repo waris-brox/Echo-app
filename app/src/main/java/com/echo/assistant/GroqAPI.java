@@ -75,22 +75,76 @@ public class GroqAPI {
                 }
             }
 
-            protected void onPostExecute(String[] r) {
-                if (r[0].equals("ok")) {
-                    String full = r[1], action = "", reply = full;
-                    if (full.contains("ACTION:")) {
-                        int idx = full.indexOf("ACTION:");
-                        try {
-                            String raw = full.substring(idx + 7).trim();
-                            action = raw.substring(0, raw.indexOf("}") + 1);
-                            reply = full.substring(0, idx).trim();
-                        } catch (Exception ignored) {}
+           protected void onPostExecute(String[] r) {
+    if (r[0].equals("ok")) {
+        String full = r[1];
+        String action = "";
+        String reply = full;
+
+        try {
+            if (full.contains("ACTION:")) {
+                int idx = full.indexOf("ACTION:");
+                String beforeAction =
+                    full.substring(0, idx).trim();
+                String afterAction =
+                    full.substring(idx + 7).trim();
+
+                // Find the complete JSON object
+                int braceStart =
+                    afterAction.indexOf("{");
+                if (braceStart >= 0) {
+                    // Count braces to find end
+                    int depth = 0;
+                    int braceEnd = -1;
+                    for (int i = braceStart;
+                        i < afterAction.length();
+                        i++) {
+                        char c = afterAction
+                            .charAt(i);
+                        if (c == '{') depth++;
+                        else if (c == '}') {
+                            depth--;
+                            if (depth == 0) {
+                                braceEnd = i;
+                                break;
+                            }
+                        }
                     }
-                    cb.onSuccess(reply, action);
-                } else {
-                    cb.onError("Boss, kuch toh gadbad hai: " + r[1]);
+
+                    if (braceEnd >= 0) {
+                        action = afterAction
+                            .substring(
+                            braceStart,
+                            braceEnd + 1);
+                        // Validate JSON
+                        new org.json.JSONObject(
+                            action);
+                        reply = beforeAction;
+                    } else {
+                        // JSON not complete
+                        // use reply as is
+                        reply = beforeAction
+                            .isEmpty()
+                            ? full : beforeAction;
+                        action = "";
+                    }
                 }
             }
+        } catch (Exception e) {
+            // JSON parse failed
+            // use full reply without action
+            reply = full.contains("ACTION:")
+                ? full.substring(0,
+                full.indexOf("ACTION:")).trim()
+                : full;
+            action = "";
+        }
+
+        cb.onSuccess(reply, action);
+    } else {
+        cb.onError("Boss, error: " + r[1]);
+    }
+}
         }.execute();
     }
 
