@@ -19,7 +19,6 @@ public class EchoAccessibility
 
     public void onServiceConnected() {
         instance = this;
-
         AccessibilityServiceInfo info =
             new AccessibilityServiceInfo();
         info.eventTypes =
@@ -34,8 +33,8 @@ public class EchoAccessibility
         setServiceInfo(info);
 
         receiver = new BroadcastReceiver() {
-            public void onReceive(
-                Context ctx, Intent intent) {
+            public void onReceive(Context ctx,
+                Intent intent) {
                 try {
                     String action =
                         intent.getStringExtra(
@@ -56,28 +55,20 @@ public class EchoAccessibility
                             performGlobalAction(
                             GLOBAL_ACTION_HOME);
                             break;
-                        case "recents":
-                            performGlobalAction(
-                            GLOBAL_ACTION_RECENTS);
-                            break;
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
         };
-
         try {
-            IntentFilter filter =
-                new IntentFilter(
+            IntentFilter f = new IntentFilter(
                 "com.echo.ACCESSIBILITY");
             if (Build.VERSION.SDK_INT >= 33) {
-                registerReceiver(receiver,
-                    filter,
+                registerReceiver(receiver, f,
                     RECEIVER_NOT_EXPORTED);
             } else {
-                registerReceiver(
-                    receiver, filter);
+                registerReceiver(receiver, f);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -87,49 +78,39 @@ public class EchoAccessibility
     public void doScreenshot() {
         try {
             if (Build.VERSION.SDK_INT >= 30) {
-                // Must use integer value 1
-                // TAKE_SCREENSHOT_SOFT_KEY = 1
-                takeScreenshot(
-                    1,
+                takeScreenshot(1,
                     getMainExecutor(),
-                    new TakeScreenshotCallback() {
+                    new TakeScreenshotCallback(){
                     public void onSuccess(
-                        ScreenshotResult result) {
+                        ScreenshotResult res) {
                         try {
                             android.graphics
                                 .Bitmap bm =
-                                android.graphics
-                                .Bitmap
+                                android
+                                .graphics.Bitmap
                                 .wrapHardwareBuffer(
-                                result
-                                .getHardwareBuffer(),
-                                result
-                                .getColorSpace());
+                                res.getHardwareBuffer(),
+                                res.getColorSpace());
                             android.provider
                                 .MediaStore
                                 .Images.Media
                                 .insertImage(
                                 getContentResolver(),
                                 bm,
-                                "Echo_Screenshot_"
+                                "Echo_"
                                 + System
                                 .currentTimeMillis(),
                                 "Echo Screenshot");
-                            result
-                                .getHardwareBuffer()
+                            res.getHardwareBuffer()
                                 .close();
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
                     }
                     public void onFailure(
-                        int errorCode) {
-                        try {
-                            performGlobalAction(
-                            GLOBAL_ACTION_TAKE_SCREENSHOT);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
+                        int code) {
+                        performGlobalAction(
+                        GLOBAL_ACTION_TAKE_SCREENSHOT);
                     }
                 });
             } else {
@@ -138,29 +119,23 @@ public class EchoAccessibility
             }
         } catch (Exception e) {
             e.printStackTrace();
-            try {
-                performGlobalAction(
-                    GLOBAL_ACTION_TAKE_SCREENSHOT);
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
+            performGlobalAction(
+                GLOBAL_ACTION_TAKE_SCREENSHOT);
         }
     }
 
-    void clickSendButton() {
+    public void clickSendButton() {
         try {
             AccessibilityNodeInfo root =
                 getRootInActiveWindow();
             if (root == null) return;
-
-            String[] sendIds = {
+            String[] ids = {
                 "com.whatsapp:id/send",
                 "com.whatsapp:id/send_btn",
                 "com.whatsapp:id/"
                 + "conversation_send_button"
             };
-
-            for (String id : sendIds) {
+            for (String id : ids) {
                 try {
                     List<AccessibilityNodeInfo>
                         nodes = root
@@ -178,28 +153,39 @@ public class EchoAccessibility
                     e.printStackTrace();
                 }
             }
+            clickByText("Send");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
-            String[] texts = {
-                "Send", "send", "SEND"};
-            for (String text : texts) {
-                try {
-                    List<AccessibilityNodeInfo>
-                        nodes = root
-                        .findAccessibilityNodeInfosByText(
-                        text);
-                    if (nodes != null) {
-                        for (AccessibilityNodeInfo
-                            n : nodes) {
-                            if (n.isClickable()) {
-                                n.performAction(
-                                AccessibilityNodeInfo
-                                .ACTION_CLICK);
-                                return;
-                            }
-                        }
+    public void clickByText(String text) {
+        try {
+            AccessibilityNodeInfo root =
+                getRootInActiveWindow();
+            if (root == null) return;
+            List<AccessibilityNodeInfo>
+                nodes = root
+                .findAccessibilityNodeInfosByText(
+                text);
+            if (nodes != null) {
+                for (AccessibilityNodeInfo n
+                    : nodes) {
+                    if (n.isClickable()) {
+                        n.performAction(
+                            AccessibilityNodeInfo
+                            .ACTION_CLICK);
+                        return;
                     }
-                } catch (Exception e) {
-                    e.printStackTrace();
+                    AccessibilityNodeInfo p =
+                        n.getParent();
+                    if (p != null
+                        && p.isClickable()) {
+                        p.performAction(
+                            AccessibilityNodeInfo
+                            .ACTION_CLICK);
+                        return;
+                    }
                 }
             }
         } catch (Exception e) {
