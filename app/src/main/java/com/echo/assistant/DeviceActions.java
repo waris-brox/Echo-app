@@ -149,77 +149,133 @@ public class DeviceActions {
     }
 
     static void sendWhatsApp(Context c, String target, String text, Result r) {
-        try {
-            String number = findNumber(c, target);
-            number = number.replaceAll("[^0-9+]", "");
-            if (!number.startsWith("+") && !number.startsWith("91")) {
-                number = "91" + number;
-            }
-            try {
-                Intent i = new Intent(Intent.ACTION_VIEW);
-                i.setData(Uri.parse("https://api.whatsapp.com/send?phone=" + number
-                    + "&text=" + Uri.encode(text)));
-                i.setPackage("com.whatsapp");
-                i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                c.startActivity(i);
-
-                new Handler(Looper.getMainLooper()).postDelayed(() -> {
     try {
-        Intent acc = new Intent("com.echo.ACCESSIBILITY");
-        acc.setPackage(c.getPackageName());
-        acc.putExtra("action", "click_send");
-        c.sendBroadcast(acc);
-    } catch (Exception ignored) {}
-}, 2500);
-
-new Handler(Looper.getMainLooper()).postDelayed(() -> {
-    try {
-        Intent acc2 = new Intent("com.echo.ACCESSIBILITY");
-        acc2.setPackage(c.getPackageName());
-        acc2.putExtra("action", "click_send");
-        c.sendBroadcast(acc2);
-    } catch (Exception ignored) {}
-}, 4500);
-
-                r.onResult(true, "Sending WhatsApp message to " + target);
-            } catch (Exception e) {
-                Intent fallback = new Intent(Intent.ACTION_VIEW,
-                    Uri.parse("https://wa.me/" + number + "?text=" + Uri.encode(text)));
-                fallback.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                c.startActivity(fallback);
-                r.onResult(true, "WhatsApp opened in browser");
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            r.onResult(false, "WhatsApp error: " + e.getMessage());
+        String number = findNumber(c, target);
+        number = number.replaceAll("[^0-9+]", "");
+        if (!number.startsWith("+") && !number.startsWith("91")) {
+            number = "91" + number;
         }
-    }
-
-    static void waCall(Context c, String target, boolean video, Result r) {
         try {
-            String number = findNumber(c, target);
-            number = number.replaceAll("[^0-9+]", "");
             Intent i = new Intent(Intent.ACTION_VIEW);
-            i.setData(Uri.parse("https://wa.me/" + number));
+            i.setData(Uri.parse("https://api.whatsapp.com/send?phone="
+                + number + "&text=" + Uri.encode(text)));
             i.setPackage("com.whatsapp");
-            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
+                | Intent.FLAG_ACTIVITY_CLEAR_TOP);
             c.startActivity(i);
 
-            new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                try {
-                    Intent acc = new Intent("com.echo.ACCESSIBILITY");
-                    acc.setPackage(c.getPackageName());
-                    acc.putExtra("action", video ? "whatsapp_video_click" : "whatsapp_call_click");
-                    c.sendBroadcast(acc);
-                } catch (Exception ignored) {}
-            }, 3000);
+            // Try clicking send at 2.5s, 4s, 6s
+            // Multiple attempts because WhatsApp
+            // load time varies per device
+            int[] delays = {2500, 4000, 6000};
+            for (int delay : delays) {
+                new Handler(Looper.getMainLooper())
+                    .postDelayed(() -> {
+                    try {
+                        if (EchoAccessibility
+                            .instance != null) {
+                            boolean sent =
+                                EchoAccessibility
+                                .instance
+                                .clickSendWhatsApp();
+                            if (sent) {
+                                r.onResult(true,
+                                    "Message sent"
+                                    + " to "
+                                    + target);
+                            }
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }, delay);
+            }
 
-            r.onResult(true, "Opening WhatsApp and calling " + target);
+            r.onResult(true,
+                "WhatsApp opened Boss."
+                + " Sending message...");
+
         } catch (Exception e) {
-            e.printStackTrace();
-            r.onResult(false, "WhatsApp call failed");
+            Intent fallback = new Intent(
+                Intent.ACTION_VIEW,
+                Uri.parse("https://wa.me/"
+                + number + "?text="
+                + Uri.encode(text)));
+            fallback.addFlags(
+                Intent.FLAG_ACTIVITY_NEW_TASK);
+            c.startActivity(fallback);
+            r.onResult(true,
+                "WhatsApp opened Boss");
         }
+    } catch (Exception e) {
+        e.printStackTrace();
+        r.onResult(false,
+            "WhatsApp error: "
+            + e.getMessage());
     }
+} 
+
+    static void waCall(Context c, String target,
+    boolean video, Result r) {
+    try {
+        String number = findNumber(c, target);
+        number = number.replaceAll("[^0-9+]", "");
+        if (!number.startsWith("+")
+            && !number.startsWith("91")) {
+            number = "91" + number;
+        }
+
+        Intent i = new Intent(Intent.ACTION_VIEW);
+        i.setData(Uri.parse(
+            "https://api.whatsapp.com/send?phone="
+            + number));
+        i.setPackage("com.whatsapp");
+        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        c.startActivity(i);
+
+        // Try clicking call button multiple times
+        String[] callBtnTexts = video
+            ? new String[]{
+                "Video call", "Video", "VIDEO"}
+            : new String[]{
+                "Voice call", "Call", "Audio call",
+                "CALL", "Voice"};
+
+        int[] delays = {3000, 5000, 7000};
+        for (int delay : delays) {
+            new Handler(Looper.getMainLooper())
+                .postDelayed(() -> {
+                try {
+                    if (EchoAccessibility
+                        .instance != null) {
+                        for (String btn
+                            : callBtnTexts) {
+                            boolean clicked =
+                                EchoAccessibility
+                                .instance
+                                .clickByTextReturns(
+                                btn);
+                            if (clicked) break;
+                        }
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }, delay);
+        }
+
+        r.onResult(true,
+            "Opening WhatsApp to "
+            + (video ? "video " : "")
+            + "call " + target);
+
+    } catch (Exception e) {
+        e.printStackTrace();
+        r.onResult(false,
+            "WhatsApp call failed: "
+            + e.getMessage());
+    }
+}
 
     static void youtubeSearch(Context c, String query, Result r) {
         try {
