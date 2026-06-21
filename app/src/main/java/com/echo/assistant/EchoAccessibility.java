@@ -35,13 +35,29 @@ public class EchoAccessibility extends AccessibilityService {
                             doScreenshot();
                             break;
                         case "click_send":
+                            AccessibilityNodeInfo dbgRoot1 = getRootInActiveWindow();
+                            if (dbgRoot1 != null) {
+                                android.util.Log.d("ECHO_DEBUG", "=== DUMP: SEND BUTTON SCREEN ===");
+                                dumpClickableNodes(dbgRoot1, 0);
+                            }
                             clickSendButton();
                             break;
                         case "whatsapp_call_click":
+                            AccessibilityNodeInfo dbgRoot2 = getRootInActiveWindow();
+                            if (dbgRoot2 != null) {
+                                android.util.Log.d("ECHO_DEBUG", "=== DUMP: VOICE CALL SCREEN ===");
+                                dumpClickableNodes(dbgRoot2, 0);
+                            }
                             clickWhatsAppCall(false);
                             break;
                         case "whatsapp_video_click":
+                            AccessibilityNodeInfo dbgRoot3 = getRootInActiveWindow();
+                            if (dbgRoot3 != null) {
+                                android.util.Log.d("ECHO_DEBUG", "=== DUMP: VIDEO CALL SCREEN ===");
+                                dumpClickableNodes(dbgRoot3, 0);
+                            }
                             clickWhatsAppCall(true);
+                            break;
                             break;
                         case "back":
                             performGlobalAction(GLOBAL_ACTION_BACK);
@@ -186,6 +202,29 @@ public class EchoAccessibility extends AccessibilityService {
             e.printStackTrace();
         }
         return false;
+    }
+
+	void dumpClickableNodes(AccessibilityNodeInfo node, int depth) {
+        if (node == null) return;
+        try {
+            if (node.isClickable()) {
+                android.graphics.Rect b = new android.graphics.Rect();
+                node.getBoundsInScreen(b);
+                String id = node.getViewIdResourceName();
+                CharSequence desc = node.getContentDescription();
+                CharSequence text = node.getText();
+                android.util.Log.d("ECHO_DEBUG",
+                    "CLICKABLE id=" + id
+                    + " desc=" + desc
+                    + " text=" + text
+                    + " bounds=" + b.toString());
+            }
+            for (int i = 0; i < node.getChildCount(); i++) {
+                dumpClickableNodes(node.getChild(i), depth + 1);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public void clickWhatsAppCall(boolean video) {
