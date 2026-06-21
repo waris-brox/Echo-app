@@ -33,8 +33,8 @@ public class EchoAccessibility
         setServiceInfo(info);
 
         receiver = new BroadcastReceiver() {
-            public void onReceive(Context ctx,
-                Intent intent) {
+            public void onReceive(
+                Context ctx, Intent intent) {
                 try {
                     String action =
                         intent.getStringExtra(
@@ -62,7 +62,8 @@ public class EchoAccessibility
             }
         };
         try {
-            IntentFilter f = new IntentFilter(
+            IntentFilter f =
+                new IntentFilter(
                 "com.echo.ACCESSIBILITY");
             if (Build.VERSION.SDK_INT >= 33) {
                 registerReceiver(receiver, f,
@@ -86,11 +87,13 @@ public class EchoAccessibility
                         try {
                             android.graphics
                                 .Bitmap bm =
-                                android
-                                .graphics.Bitmap
+                                android.graphics
+                                .Bitmap
                                 .wrapHardwareBuffer(
-                                res.getHardwareBuffer(),
-                                res.getColorSpace());
+                                res
+                                .getHardwareBuffer(),
+                                res
+                                .getColorSpace());
                             android.provider
                                 .MediaStore
                                 .Images.Media
@@ -101,7 +104,8 @@ public class EchoAccessibility
                                 + System
                                 .currentTimeMillis(),
                                 "Echo Screenshot");
-                            res.getHardwareBuffer()
+                            res
+                                .getHardwareBuffer()
                                 .close();
                         } catch (Exception e) {
                             e.printStackTrace();
@@ -129,11 +133,15 @@ public class EchoAccessibility
             AccessibilityNodeInfo root =
                 getRootInActiveWindow();
             if (root == null) return;
+
+            // Try WhatsApp send button IDs
             String[] ids = {
                 "com.whatsapp:id/send",
                 "com.whatsapp:id/send_btn",
                 "com.whatsapp:id/"
-                + "conversation_send_button"
+                + "conversation_send_button",
+                "com.whatsapp:id/"
+                + "mic_to_send_button"
             };
             for (String id : ids) {
                 try {
@@ -143,27 +151,74 @@ public class EchoAccessibility
                         id);
                     if (nodes != null
                         && !nodes.isEmpty()) {
-                        nodes.get(0)
-                            .performAction(
-                            AccessibilityNodeInfo
-                            .ACTION_CLICK);
-                        return;
+                        AccessibilityNodeInfo
+                            btn = nodes.get(0);
+                        if (btn.isEnabled()) {
+                            btn.performAction(
+                                AccessibilityNodeInfo
+                                .ACTION_CLICK);
+                            return;
+                        }
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
-            clickByText("Send");
+
+            // Fallback by text
+            clickSendButton2(root);
+
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public void clickByText(String text) {
+    void clickSendButton2(
+        AccessibilityNodeInfo root) {
+        try {
+            String[] texts = {
+                "Send", "send", "SEND"};
+            for (String text : texts) {
+                List<AccessibilityNodeInfo>
+                    nodes = root
+                    .findAccessibilityNodeInfosByText(
+                    text);
+                if (nodes != null) {
+                    for (AccessibilityNodeInfo
+                        n : nodes) {
+                        if (n.isClickable()
+                            && n.isEnabled()) {
+                            n.performAction(
+                                AccessibilityNodeInfo
+                                .ACTION_CLICK);
+                            return;
+                        }
+                        AccessibilityNodeInfo
+                            p = n.getParent();
+                        if (p != null
+                            && p.isClickable()
+                            && p.isEnabled()) {
+                            p.performAction(
+                                AccessibilityNodeInfo
+                                .ACTION_CLICK);
+                            return;
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Click by text and return success
+    public boolean clickByTextReturns(
+        String text) {
         try {
             AccessibilityNodeInfo root =
                 getRootInActiveWindow();
-            if (root == null) return;
+            if (root == null) return false;
+
             List<AccessibilityNodeInfo>
                 nodes = root
                 .findAccessibilityNodeInfosByText(
@@ -171,26 +226,48 @@ public class EchoAccessibility
             if (nodes != null) {
                 for (AccessibilityNodeInfo n
                     : nodes) {
-                    if (n.isClickable()) {
+                    if (n.isClickable()
+                        && n.isEnabled()) {
                         n.performAction(
                             AccessibilityNodeInfo
                             .ACTION_CLICK);
-                        return;
+                        return true;
                     }
+                    // Try parent node
                     AccessibilityNodeInfo p =
                         n.getParent();
                     if (p != null
-                        && p.isClickable()) {
+                        && p.isClickable()
+                        && p.isEnabled()) {
                         p.performAction(
                             AccessibilityNodeInfo
                             .ACTION_CLICK);
-                        return;
+                        return true;
+                    }
+                    // Try grandparent
+                    if (p != null) {
+                        AccessibilityNodeInfo
+                            gp = p.getParent();
+                        if (gp != null
+                            && gp.isClickable()
+                            && gp.isEnabled()) {
+                            gp.performAction(
+                                AccessibilityNodeInfo
+                                .ACTION_CLICK);
+                            return true;
+                        }
                     }
                 }
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
+        return false;
+    }
+
+    // Click by text void version
+    public void clickByText(String text) {
+        clickByTextReturns(text);
     }
 
     public void onAccessibilityEvent(
