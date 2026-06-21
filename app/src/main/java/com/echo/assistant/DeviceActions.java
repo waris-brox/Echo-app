@@ -164,13 +164,22 @@ public class DeviceActions {
                 c.startActivity(i);
 
                 new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                    try {
-                        Intent acc = new Intent("com.echo.ACCESSIBILITY");
-                        acc.setPackage(c.getPackageName());
-                        acc.putExtra("action", "click_send");
-                        c.sendBroadcast(acc);
-                    } catch (Exception ignored) {}
-                }, 3500);
+    try {
+        Intent acc = new Intent("com.echo.ACCESSIBILITY");
+        acc.setPackage(c.getPackageName());
+        acc.putExtra("action", "click_send");
+        c.sendBroadcast(acc);
+    } catch (Exception ignored) {}
+}, 2500);
+
+new Handler(Looper.getMainLooper()).postDelayed(() -> {
+    try {
+        Intent acc2 = new Intent("com.echo.ACCESSIBILITY");
+        acc2.setPackage(c.getPackageName());
+        acc2.putExtra("action", "click_send");
+        c.sendBroadcast(acc2);
+    } catch (Exception ignored) {}
+}, 4500);
 
                 r.onResult(true, "Sending WhatsApp message to " + target);
             } catch (Exception e) {

@@ -101,6 +101,7 @@ public class EchoAccessibility extends AccessibilityService {
             AccessibilityNodeInfo root = getRootInActiveWindow();
             if (root == null) return;
 
+            // Try known view IDs first
             String[] ids = {
                 "com.whatsapp:id/send",
                 "com.whatsapp:id/send_btn",
@@ -121,34 +122,70 @@ public class EchoAccessibility extends AccessibilityService {
                     e.printStackTrace();
                 }
             }
-            clickSendButton2(root);
+
+            // Search by content-description (icon buttons have no visible text)
+            if (clickByDescription(root, "Send")) return;
+
+            // Last resort: scan every clickable node and guess by position
+            // (send button is usually bottom-right of screen)
+            clickBottomRightClickable(root);
+
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    void clickSendButton2(AccessibilityNodeInfo root) {
+    boolean clickByDescription(AccessibilityNodeInfo node, String desc) {
+        if (node == null) return false;
         try {
-            String[] texts = {"Send", "send", "SEND"};
-            for (String text : texts) {
-                List<AccessibilityNodeInfo> nodes = root.findAccessibilityNodeInfosByText(text);
-                if (nodes != null) {
-                    for (AccessibilityNodeInfo n : nodes) {
-                        if (n.isClickable() && n.isEnabled()) {
-                            n.performAction(AccessibilityNodeInfo.ACTION_CLICK);
-                            return;
-                        }
-                        AccessibilityNodeInfo p = n.getParent();
-                        if (p != null && p.isClickable() && p.isEnabled()) {
-                            p.performAction(AccessibilityNodeInfo.ACTION_CLICK);
-                            return;
-                        }
-                    }
-                }
+            CharSequence cd = node.getContentDescription();
+            if (cd != null && cd.toString().equalsIgnoreCase(desc) && node.isClickable() && node.isEnabled()) {
+                node.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+                return true;
+            }
+            for (int i = 0; i < node.getChildCount(); i++) {
+                AccessibilityNodeInfo child = node.getChild(i);
+                if (child != null && clickByDescription(child, desc)) return true;
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
+        return false;
+    }
+
+    void clickBottomRightClickable(AccessibilityNodeInfo root) {
+        try {
+            android.graphics.Rect screenBounds = new android.graphics.Rect();
+            root.getBoundsInScreen(screenBounds);
+            int screenHeight = screenBounds.height();
+
+            findAndClickInBottomArea(root, screenHeight);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    boolean findAndClickInBottomArea(AccessibilityNodeInfo node, int screenHeight) {
+        if (node == null) return false;
+        try {
+            if (node.isClickable() && node.isEnabled()) {
+                android.graphics.Rect bounds = new android.graphics.Rect();
+                node.getBoundsInScreen(bounds);
+                // Bottom 15% of screen, right 25% of screen — typical send button zone
+                if (bounds.top > screenHeight * 0.80
+                    && bounds.left > screenHeight * 0.5) {
+                    node.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+                    return true;
+                }
+            }
+            for (int i = 0; i < node.getChildCount(); i++) {
+                AccessibilityNodeInfo child = node.getChild(i);
+                if (child != null && findAndClickInBottomArea(child, screenHeight)) return true;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 
     public void clickWhatsAppCall(boolean video) {
