@@ -112,39 +112,72 @@ public class EchoAccessibility extends AccessibilityService {
     }
 
     public void clickSendButton() {
-        try {
-            AccessibilityNodeInfo root = getRootInActiveWindow();
-            if (root == null) return;
+    try {
+        AccessibilityNodeInfo root = getRootInActiveWindow();
+        if (root == null) return;
 
-            String[] ids = {
+        String[] sendIds = {
                 "com.whatsapp:id/send",
                 "com.whatsapp:id/send_btn",
                 "com.whatsapp:id/conversation_send_button",
                 "com.whatsapp:id/mic_to_send_button"
-            };
-            for (String id : ids) {
-                try {
-                    List<AccessibilityNodeInfo> nodes = root.findAccessibilityNodeInfosByViewId(id);
-                    if (nodes != null && !nodes.isEmpty()) {
-                        AccessibilityNodeInfo btn = nodes.get(0);
-                        if (btn.isEnabled()) {
-                            btn.performAction(AccessibilityNodeInfo.ACTION_CLICK);
-                            return;
+        };
+
+        for (String id : sendIds) {
+            try {
+                List<AccessibilityNodeInfo> nodes =
+                        root.findAccessibilityNodeInfosByViewId(id);
+
+                if (nodes != null) {
+                    for (AccessibilityNodeInfo node : nodes) {
+
+                        AccessibilityNodeInfo target = node;
+
+                        while (target != null) {
+
+                            if (target.isClickable()) {
+                                target.performAction(
+                                        AccessibilityNodeInfo.ACTION_CLICK
+                                );
+                                return;
+                            }
+
+                            target = target.getParent();
                         }
                     }
-                } catch (Exception e) {
-                    e.printStackTrace();
+                }
+            } catch (Exception ignored) {}
+        }
+
+        if (clickByDescription(root, "Send")) return;
+        if (clickByDescription(root, "send")) return;
+
+        List<AccessibilityNodeInfo> sendTexts =
+                root.findAccessibilityNodeInfosByText("Send");
+
+        if (sendTexts != null) {
+            for (AccessibilityNodeInfo node : sendTexts) {
+
+                AccessibilityNodeInfo parent = node;
+
+                while (parent != null) {
+
+                    if (parent.isClickable()) {
+                        parent.performAction(
+                                AccessibilityNodeInfo.ACTION_CLICK
+                        );
+                        return;
+                    }
+
+                    parent = parent.getParent();
                 }
             }
-
-            if (clickByDescription(root, "Send")) return;
-
-            clickBottomRightClickable(root);
-
-        } catch (Exception e) {
-            e.printStackTrace();
         }
+
+    } catch (Exception e) {
+        e.printStackTrace();
     }
+}
 
     boolean clickByDescription(AccessibilityNodeInfo node, String desc) {
         if (node == null) return false;
