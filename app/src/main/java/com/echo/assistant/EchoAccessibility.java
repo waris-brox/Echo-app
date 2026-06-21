@@ -58,7 +58,6 @@ public class EchoAccessibility extends AccessibilityService {
                             }
                             clickWhatsAppCall(true);
                             break;
-                            break;
                         case "back":
                             performGlobalAction(GLOBAL_ACTION_BACK);
                             break;
@@ -117,7 +116,6 @@ public class EchoAccessibility extends AccessibilityService {
             AccessibilityNodeInfo root = getRootInActiveWindow();
             if (root == null) return;
 
-            // Try known view IDs first
             String[] ids = {
                 "com.whatsapp:id/send",
                 "com.whatsapp:id/send_btn",
@@ -139,11 +137,8 @@ public class EchoAccessibility extends AccessibilityService {
                 }
             }
 
-            // Search by content-description (icon buttons have no visible text)
             if (clickByDescription(root, "Send")) return;
 
-            // Last resort: scan every clickable node and guess by position
-            // (send button is usually bottom-right of screen)
             clickBottomRightClickable(root);
 
         } catch (Exception e) {
@@ -187,7 +182,6 @@ public class EchoAccessibility extends AccessibilityService {
             if (node.isClickable() && node.isEnabled()) {
                 android.graphics.Rect bounds = new android.graphics.Rect();
                 node.getBoundsInScreen(bounds);
-                // Bottom 15% of screen, right 25% of screen — typical send button zone
                 if (bounds.top > screenHeight * 0.80
                     && bounds.left > screenHeight * 0.5) {
                     node.performAction(AccessibilityNodeInfo.ACTION_CLICK);
@@ -204,7 +198,7 @@ public class EchoAccessibility extends AccessibilityService {
         return false;
     }
 
-	void dumpClickableNodes(AccessibilityNodeInfo node, int depth) {
+    void dumpClickableNodes(AccessibilityNodeInfo node, int depth) {
         if (node == null) return;
         try {
             if (node.isClickable()) {
