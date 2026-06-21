@@ -232,7 +232,39 @@ public class DeviceActions {
 
     static void openApp(Context c, String name, Result r) {
         try {
-            String pkg = mapApp(name.toLowerCase().trim().replace(" ", ""));
+            String lname = name.toLowerCase().trim();
+
+            // STEP 1: Search installed apps by visible label first
+            Intent search = new Intent(Intent.ACTION_MAIN);
+            search.addCategory(Intent.CATEGORY_LAUNCHER);
+            java.util.List<android.content.pm.ResolveInfo> apps =
+                c.getPackageManager().queryIntentActivities(search, 0);
+
+            android.content.pm.ResolveInfo bestMatch = null;
+            for (android.content.pm.ResolveInfo app : apps) {
+                String label = app.loadLabel(c.getPackageManager()).toString().toLowerCase();
+                if (label.equals(lname)) {
+                    bestMatch = app;
+                    break;
+                }
+                if (label.contains(lname) || lname.contains(label)) {
+                    if (bestMatch == null) bestMatch = app;
+                }
+            }
+
+            if (bestMatch != null) {
+                Intent launch = c.getPackageManager()
+                    .getLaunchIntentForPackage(bestMatch.activityInfo.packageName);
+                if (launch != null) {
+                    launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    c.startActivity(launch);
+                    r.onResult(true, "Opened " + name);
+                    return;
+                }
+            }
+
+            // STEP 2: Fallback to hardcoded package guess
+            String pkg = mapApp(lname.replace(" ", ""));
             Intent i = c.getPackageManager().getLaunchIntentForPackage(pkg);
             if (i != null) {
                 i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -240,29 +272,14 @@ public class DeviceActions {
                 r.onResult(true, "Opened " + name);
                 return;
             }
-            Intent search = new Intent(Intent.ACTION_MAIN);
-            search.addCategory(Intent.CATEGORY_LAUNCHER);
-            java.util.List<android.content.pm.ResolveInfo> apps =
-                c.getPackageManager().queryIntentActivities(search, 0);
-            String lname = name.toLowerCase();
-            for (android.content.pm.ResolveInfo app : apps) {
-                String label = app.loadLabel(c.getPackageManager()).toString().toLowerCase();
-                if (label.contains(lname) || lname.contains(label)) {
-                    Intent launch = c.getPackageManager()
-                        .getLaunchIntentForPackage(app.activityInfo.packageName);
-                    if (launch != null) {
-                        launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        c.startActivity(launch);
-                        r.onResult(true, "Opened " + name);
-                        return;
-                    }
-                }
-            }
+
+            // STEP 3: Nothing found, open Play Store
             Intent store = new Intent(Intent.ACTION_VIEW,
                 Uri.parse("market://search?q=" + name));
             store.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             c.startActivity(store);
             r.onResult(false, name + " not found. Opened Play Store.");
+
         } catch (Exception e) {
             e.printStackTrace();
             r.onResult(false, "Could not open " + name);
