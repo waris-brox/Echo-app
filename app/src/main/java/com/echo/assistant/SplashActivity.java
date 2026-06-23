@@ -15,7 +15,6 @@ public class SplashActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_splash);
 
-        View root = findViewById(R.id.splash_logo);
         AnimationSet anim = new AnimationSet(true);
         AlphaAnimation fade = new AlphaAnimation(0f, 1f);
         fade.setDuration(700);

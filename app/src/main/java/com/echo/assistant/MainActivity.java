@@ -28,7 +28,7 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.Locale;
 
-public class ChatActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity {
 
     private LinearLayout messagesContainer;
     private NestedScrollView scrollView;
