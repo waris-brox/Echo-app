@@ -1,209 +1,316 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@color/base">
+    android:background="@color/bg">
 
+    <!-- Header -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="56dp"
+        android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:paddingStart="16dp"
-        android:paddingEnd="16dp">
+        android:paddingHorizontal="20dp"
+        android:paddingVertical="14dp"
+        android:background="@color/surface">
 
         <ImageButton
             android:id="@+id/btn_back"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
-            android:background="@android:color/transparent"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
             android:src="@android:drawable/ic_media_previous"
-            android:tint="@color/text_muted"/>
+            android:background="@drawable/circle_btn_bg"
+            android:tint="@color/accent"
+            android:layout_marginEnd="10dp"
+            android:contentDescription="Back"/>
 
         <TextView
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
             android:text="Settings"
-            android:textColor="@color/text_main"
-            android:textSize="17sp"
-            android:textStyle="bold"
-            android:gravity="center"/>
-
-        <View
-            android:layout_width="36dp"
-            android:layout_height="36dp"/>
+            android:textSize="20sp"
+            android:textColor="@color/accent"
+            android:letterSpacing="0.1"
+            android:fontFamily="sans-serif-light"/>
 
     </LinearLayout>
 
+    <!-- Settings items -->
     <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:padding="20dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="20dp">
+            android:orientation="vertical">
 
+            <!-- API Key -->
             <LinearLayout
+                android:id="@+id/item_api_key"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:layout_marginBottom="24dp">
+                android:padding="18dp"
+                android:background="@drawable/card_bg"
+                android:layout_marginBottom="10dp">
 
-                <ImageView
-                    android:layout_width="56dp"
-                    android:layout_height="56dp"
-                    android:background="@drawable/bg_circle_surface"/>
+                <TextView
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:text="🔑"
+                    android:textSize="18sp"
+                    android:gravity="center"
+                    android:background="@drawable/icon_bg"
+                    android:layout_marginEnd="14dp"/>
 
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:orientation="vertical"
-                    android:layout_marginStart="14dp">
+                    android:orientation="vertical">
 
                     <TextView
-                        android:id="@+id/tv_name"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="User Name"
-                        android:textColor="@color/text_main"
+                        android:text="Groq API Key"
                         android:textSize="15sp"
-                        android:textStyle="bold"/>
+                        android:textColor="@color/text"/>
 
                     <TextView
-                        android:id="@+id/tv_email"
+                        android:id="@+id/tv_api_status"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="user@mail.com"
-                        android:textColor="@color/text_dim"
+                        android:text="Tap to update your API key"
                         android:textSize="12sp"
+                        android:textColor="@color/text_dim"
                         android:layout_marginTop="2dp"/>
 
                 </LinearLayout>
 
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="›"
+                    android:textSize="22sp"
+                    android:textColor="@color/text_dim"/>
+
             </LinearLayout>
 
-            <TextView
-                android:layout_width="wrap_content"
+            <!-- Accessibility -->
+            <LinearLayout
+                android:id="@+id/item_accessibility"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="PREFERENCES"
-                android:textColor="@color/olive"
-                android:textSize="11sp"
-                android:textStyle="bold"
-                android:letterSpacing="0.15"
-                android:layout_marginBottom="10dp"/>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="52dp"
                 android:orientation="horizontal"
-                android:gravity="center_vertical">
+                android:gravity="center_vertical"
+                android:padding="18dp"
+                android:background="@drawable/card_bg"
+                android:layout_marginBottom="10dp">
+
                 <TextView
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:text="♿"
+                    android:textSize="18sp"
+                    android:gravity="center"
+                    android:background="@drawable/icon_bg"
+                    android:layout_marginEnd="14dp"/>
+
+                <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Dark Mode"
-                    android:textColor="@color/text_main"
-                    android:textSize="14sp"/>
-                <Switch
-                    android:id="@+id/sw_dark_mode"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:checked="true"
-                    android:thumbTint="@color/olive"
-                    android:trackTint="@color/surface"/>
-            </LinearLayout>
+                    android:orientation="vertical">
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="52dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Accessibility"
+                        android:textSize="15sp"
+                        android:textColor="@color/text"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Required for WhatsApp &amp; screenshots"
+                        android:textSize="12sp"
+                        android:textColor="@color/text_dim"
+                        android:layout_marginTop="2dp"/>
+
+                </LinearLayout>
+
                 <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Voice Response"
-                    android:textColor="@color/text_main"
-                    android:textSize="14sp"/>
-                <Switch
-                    android:id="@+id/sw_voice"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:checked="true"
-                    android:thumbTint="@color/olive"
-                    android:trackTint="@color/surface"/>
+                    android:text="›"
+                    android:textSize="22sp"
+                    android:textColor="@color/text_dim"/>
+
             </LinearLayout>
 
+            <!-- Write Settings -->
             <LinearLayout
+                android:id="@+id/item_write_settings"
                 android:layout_width="match_parent"
-                android:layout_height="52dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Notifications"
-                    android:textColor="@color/text_main"
-                    android:textSize="14sp"/>
-                <Switch
-                    android:id="@+id/sw_notifications"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:checked="true"
-                    android:thumbTint="@color/olive"
-                    android:trackTint="@color/surface"/>
-            </LinearLayout>
-
-            <TextView
-                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="ACCOUNT"
-                android:textColor="@color/olive"
-                android:textSize="11sp"
-                android:textStyle="bold"
-                android:letterSpacing="0.15"
-                android:layout_marginTop="20dp"
-                android:layout_marginBottom="10dp"/>
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:padding="18dp"
+                android:background="@drawable/card_bg"
+                android:layout_marginBottom="10dp">
 
-            <EditText
-                android:id="@+id/et_api_key"
-                android:layout_width="match_parent"
-                android:layout_height="52dp"
-                android:hint="Enter Groq API Key"
-                android:textColor="@color/text_main"
-                android:textColorHint="@color/text_dim"
-                android:background="@drawable/bg_input"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
-                android:inputType="textPassword"
-                android:layout_marginBottom="12dp"/>
+                <TextView
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:text="⚙️"
+                    android:textSize="18sp"
+                    android:gravity="center"
+                    android:background="@drawable/icon_bg"
+                    android:layout_marginEnd="14dp"/>
 
-            <Button
-                android:id="@+id/btn_save_key"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:text="Save API Key"
-                android:textColor="@color/white"
-                android:background="@drawable/bg_btn_primary"
-                android:layout_marginBottom="20dp"/>
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
 
-            <Button
-                android:id="@+id/btn_logout"
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Write Settings"
+                        android:textSize="15sp"
+                        android:textColor="@color/text"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Required for brightness &amp; timeout"
+                        android:textSize="12sp"
+                        android:textColor="@color/text_dim"
+                        android:layout_marginTop="2dp"/>
+
+                </LinearLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="›"
+                    android:textSize="22sp"
+                    android:textColor="@color/text_dim"/>
+
+            </LinearLayout>
+
+            <!-- Wake Word -->
+            <LinearLayout
+                android:id="@+id/item_wake_word"
                 android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:text="Log Out"
-                android:textColor="@color/danger"
-                android:background="@drawable/bg_card"/>
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:padding="18dp"
+                android:background="@drawable/card_bg"
+                android:layout_marginBottom="10dp">
+
+                <TextView
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:text="🎙️"
+                    android:textSize="18sp"
+                    android:gravity="center"
+                    android:background="@drawable/icon_bg"
+                    android:layout_marginEnd="14dp"/>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Wake Word"
+                        android:textSize="15sp"
+                        android:textColor="@color/text"/>
+
+                    <TextView
+                        android:id="@+id/tv_wake_status"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Say Echo to activate"
+                        android:textSize="12sp"
+                        android:textColor="@color/text_dim"
+                        android:layout_marginTop="2dp"/>
+
+                </LinearLayout>
+
+                <Switch
+                    android:id="@+id/switch_wake"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:thumbTint="@color/accent"
+                    android:trackTint="@color/border"/>
+
+            </LinearLayout>
+
+            <!-- Support -->
+            <LinearLayout
+                android:id="@+id/item_support"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:padding="18dp"
+                android:background="@drawable/card_bg"
+                android:layout_marginBottom="10dp">
+
+                <TextView
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:text="✉️"
+                    android:textSize="18sp"
+                    android:gravity="center"
+                    android:background="@drawable/icon_bg"
+                    android:layout_marginEnd="14dp"/>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Feedback &amp; Support"
+                        android:textSize="15sp"
+                        android:textColor="@color/text"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Send suggestions or report an issue"
+                        android:textSize="12sp"
+                        android:textColor="@color/text_dim"
+                        android:layout_marginTop="2dp"/>
+
+                </LinearLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="›"
+                    android:textSize="22sp"
+                    android:textColor="@color/text_dim"/>
+
+            </LinearLayout>
 
         </LinearLayout>
+
     </ScrollView>
 
 </LinearLayout>

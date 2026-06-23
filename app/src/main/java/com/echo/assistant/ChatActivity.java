@@ -1,502 +1,261 @@
 package com.echo.assistant;
 
-import android.app.Activity;
+import android.Manifest;
 import android.content.Intent;
-import android.content.IntentFilter;
-import android.os.BatteryManager;
+import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
+import android.speech.SpeechRecognizer;
 import android.speech.tts.TextToSpeech;
+import android.view.Gravity;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
-import android.widget.Toast;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import androidx.core.widget.NestedScrollView;
 import org.json.JSONArray;
-import java.text.SimpleDateFormat;
+import org.json.JSONObject;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Locale;
 
-public class ChatActivity extends Activity {
+public class ChatActivity extends AppCompatActivity {
 
-    private LinearLayout layoutMessages;
-    private ScrollView scrollChat;
-    private EditText etInput;
-    private JSONArray chatHistory;
+    private LinearLayout messagesContainer;
+    private NestedScrollView scrollView;
+    private EditText inputMessage;
+    private View greetingLayout;
+    private View typingIndicator;
     private TextToSpeech tts;
-    private boolean ttsReady = false;
-    private boolean voiceEnabled = true;
+    private SpeechRecognizer speechRecognizer;
+    private JSONArray chatHistory = new JSONArray();
+    private boolean isTtsSpeaking = false;
+    private String userName = "Boss";
 
-    protected void onCreate(Bundle s) {
-        super.onCreate(s);
-        try {
-            setContentView(R.layout.activity_chat);
-            layoutMessages = findViewById(
-                R.id.layout_messages);
-            scrollChat = findViewById(
-                R.id.scroll_chat);
-            etInput = findViewById(R.id.et_input);
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_chat);
 
-            chatHistory = ChatHistory.loadForGroq(this);
-            GroqAPI.API_KEY =
-                AppPrefs.getApiKey(this);
-            voiceEnabled =
-                AppPrefs.isVoiceEnabled(this);
-
-            initTTS();
-
-            if (findViewById(R.id.btn_back) != null)
-                findViewById(R.id.btn_back)
-                    .setOnClickListener(
-                    v -> finish());
-
-            if (findViewById(R.id.btn_menu) != null)
-                findViewById(R.id.btn_menu)
-                    .setOnClickListener(v ->
-                    startActivity(new Intent(
-                    this,
-                    SettingsActivity.class)));
-
-            if (findViewById(R.id.btn_send) != null)
-                findViewById(R.id.btn_send)
-                    .setOnClickListener(
-                    v -> sendMessage());
-
-            if (findViewById(R.id.btn_mic) != null)
-                findViewById(R.id.btn_mic)
-                    .setOnClickListener(
-                    v -> startVoice());
-
-            if (etInput != null) {
-                etInput.setOnEditorActionListener(
-                    (v, a, e) -> {
-                    sendMessage();
-                    return true;
-                });
-            }
-
-            String firstMsg = getIntent() != null
-                ? getIntent().getStringExtra(
-                "message") : null;
-            if (firstMsg != null
-                && !firstMsg.isEmpty()) {
-                new Handler(Looper.getMainLooper())
-                    .postDelayed(
-                    () -> sendToEcho(firstMsg),
-                    400);
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            Toast.makeText(this,
-                "Chat error: " + e.getMessage(),
-                Toast.LENGTH_LONG).show();
+        // Get user name
+        userName = getIntent().getStringExtra("user_name");
+        if (userName == null || userName.isEmpty()) {
+            SharedPreferences prefs = getSharedPreferences("echo_prefs", MODE_PRIVATE);
+            userName = prefs.getString("user_name", "Boss");
         }
-    }
 
-    void initTTS() {
-        try {
-            tts = new TextToSpeech(this,
-                status -> {
-                try {
-                    if (status ==
-                        TextToSpeech.SUCCESS) {
-                        int r = tts.setLanguage(
-                            new Locale("en", "IN"));
-                        if (r ==
-                            TextToSpeech
-                            .LANG_MISSING_DATA
-                            || r ==
-                            TextToSpeech
-                            .LANG_NOT_SUPPORTED) {
-                            tts.setLanguage(
-                                Locale.ENGLISH);
-                        }
-                        tts.setSpeechRate(0.95f);
-                        tts.setPitch(1.1f);
-                        ttsReady = true;
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            });
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
+        // Load API key
+        SharedPreferences prefs = getSharedPreferences("echo_prefs", MODE_PRIVATE);
+        GroqAPI.API_KEY = prefs.getString("groq_api_key", "");
 
-    void speakText(String text) {
-        try {
-            if (!voiceEnabled) return;
-            if (ttsReady && tts != null) {
-                tts.speak(text,
-                    TextToSpeech.QUEUE_FLUSH,
-                    null, null);
+        // Views
+        messagesContainer = findViewById(R.id.messages_container);
+        scrollView = findViewById(R.id.scroll_messages);
+        inputMessage = findViewById(R.id.input_message);
+        greetingLayout = findViewById(R.id.greeting_layout);
+        typingIndicator = findViewById(R.id.typing_indicator);
+
+        // Update greeting
+        TextView greetingText = findViewById(R.id.greeting_text);
+        greetingText.setText("Hello, " + userName);
+
+        // Send button
+        findViewById(R.id.btn_send).setOnClickListener(v -> sendMessage());
+
+        // Voice button
+        findViewById(R.id.btn_voice).setOnClickListener(v -> startVoiceInput());
+
+        // Settings button
+        findViewById(R.id.btn_settings).setOnClickListener(v ->
+            startActivity(new Intent(this, SettingsActivity.class)));
+
+        // TTS
+        tts = new TextToSpeech(this, status -> {
+            if (status == TextToSpeech.SUCCESS) {
+                tts.setLanguage(new Locale("hi", "IN"));
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
+        });
 
-    void stopSpeaking() {
-        try {
-            if (tts != null
-                && tts.isSpeaking()) {
-                tts.stop();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+        // Request mic permission
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+            != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                new String[]{Manifest.permission.RECORD_AUDIO}, 1);
+        }
+
+        // Handle wake word trigger
+        if (getIntent().getBooleanExtra("wake_word", false)) {
+            startVoiceInput();
         }
     }
 
     void sendMessage() {
+        String text = inputMessage.getText().toString().trim();
+        if (text.isEmpty()) return;
+        inputMessage.setText("");
+        addMessage(text, true);
+        showTyping(true);
+
         try {
-            if (etInput == null) return;
-            String text = etInput.getText()
-                .toString().trim();
-            if (text.isEmpty()) return;
-            etInput.setText("");
-            stopSpeaking();
-            sendToEcho(text);
+            JSONObject userMsg = new JSONObject();
+            userMsg.put("role", "user");
+            userMsg.put("content", text);
+            chatHistory.put(userMsg);
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
 
-    void sendToEcho(String text) {
-        try {
-            if (GroqAPI.API_KEY == null
-                || GroqAPI.API_KEY.isEmpty()) {
-                String msg = "Boss please set "
-                    + "your Groq API key "
-                    + "in Settings first!";
-                addEchoBubble(msg);
-                speakText(msg);
-                return;
-            }
+        GroqAPI.ask(chatHistory, text, new GroqAPI.Callback() {
+            public void onSuccess(String reply, String action) {
+                showTyping(false);
+                addMessage(reply, false);
+                speak(reply);
 
-            String enriched = addContext(text);
-            addUserBubble(text);
-            View typing = addTyping();
-
-            ChatHistory.add(this, "user", text);
-            chatHistory = ChatHistory.loadForGroq(this);
-
-            GroqAPI.ask(chatHistory, enriched,
-                new GroqAPI.Callback() {
-                public void onSuccess(
-                    String reply,
-                    String action) {
-                    try {
-                        runOnUiThread(() -> {
-                            try {
-                                if (layoutMessages
-                                    != null)
-                                    layoutMessages
-                                    .removeView(
-                                    typing);
-
-                                addEchoBubble(
-                                    reply);
-                                ChatHistory.add(
-                                    ChatActivity
-                                    .this,
-                                    "assistant",
-                                    reply);
-                                speakText(reply);
-
-                                if (action != null
-                                    && !action
-                                    .isEmpty()) {
-                                    String fa =
-                                        action;
-                                    DeviceActions
-                                    .handle(
-                                    ChatActivity
-                                    .this,
-                                    fa,
-                                    (success,
-                                    msg) -> {
-                                        runOnUiThread(
-                                        () -> {
-                                        if (!success
-                                        && msg !=
-                                        null
-                                        && !msg
-                                        .isEmpty()){
-                                            addEchoBubble(
-                                            "⚠️ "
-                                            + msg);
-                                            speakText(
-                                            msg);
-                                        }
-                                        });
-                                    });
-                                }
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-                        });
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-
-                public void onError(String error) {
-                    try {
-                        runOnUiThread(() -> {
-                            try {
-                                if (layoutMessages
-                                    != null)
-                                    layoutMessages
-                                    .removeView(
-                                    typing);
-                                addEchoBubble(
-                                    error);
-                                speakText(error);
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-                        });
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-            });
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    String addContext(String text) {
-        try {
-            String lower = text.toLowerCase();
-
-            if (lower.contains("battery")) {
                 try {
-                    IntentFilter f =
-                        new IntentFilter(
-                        Intent
-                        .ACTION_BATTERY_CHANGED);
-                    Intent bi =
-                        registerReceiver(null, f);
-                    int lvl = bi.getIntExtra(
-                        BatteryManager
-                        .EXTRA_LEVEL, -1);
-                    int scl = bi.getIntExtra(
-                        BatteryManager
-                        .EXTRA_SCALE, -1);
-                    int pct = (int)(
-                        (lvl / (float) scl)
-                        * 100);
-                    boolean charging =
-                        bi.getIntExtra(
-                        BatteryManager
-                        .EXTRA_STATUS, -1)
-                        == BatteryManager
-                        .BATTERY_STATUS_CHARGING;
-                    return text
-                        + " [Battery: " + pct
-                        + "% "
-                        + (charging
-                        ? "charging"
-                        : "not charging")
-                        + "]";
-                } catch (Exception e) {
-                    return text;
-                }
-            }
-
-            if (lower.contains("time")
-                || lower.contains("date")
-                || lower.contains("day")
-                || lower.contains("today")
-                || lower.contains("kitne baje")) {
-                String dt =
-                    new SimpleDateFormat(
-                    "EEEE dd MMMM yyyy"
-                    + ", hh:mm a",
-                    Locale.getDefault())
-                    .format(new Date());
-                return text
-                    + " [Current: " + dt + "]";
-            }
-
-            if (lower.contains("storage")
-                || lower.contains("space")
-                || lower.contains("memory")) {
-                return text + " ["
-                    + AppPrefs.getStorageInfo()
-                    + "]";
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return text;
-    }
-
-    void addUserBubble(String text) {
-        try {
-            if (layoutMessages == null) return;
-            View v = getLayoutInflater().inflate(
-                R.layout.item_bubble_user,
-                layoutMessages, false);
-            TextView msg =
-                v.findViewById(R.id.tv_message);
-            TextView time =
-                v.findViewById(R.id.tv_time);
-            if (msg != null) msg.setText(text);
-            if (time != null)
-                time.setText("You · " + getTime());
-            layoutMessages.addView(v);
-            scrollBottom();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    void addEchoBubble(String text) {
-        try {
-            if (layoutMessages == null) return;
-            View v = getLayoutInflater().inflate(
-                R.layout.item_bubble_echo,
-                layoutMessages, false);
-            TextView msg =
-                v.findViewById(R.id.tv_message);
-            TextView time =
-                v.findViewById(R.id.tv_time);
-            if (msg != null) msg.setText(text);
-            if (time != null)
-                time.setText(
-                "Echo · " + getTime());
-            layoutMessages.addView(v);
-            scrollBottom();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    View addTyping() {
-        try {
-            if (layoutMessages == null)
-                return new View(this);
-            TextView tv = new TextView(this);
-            tv.setText("Echo is thinking...");
-            tv.setTextColor(
-                getResources().getColor(
-                R.color.text_dim));
-            tv.setTextSize(13);
-            tv.setPadding(32, 16, 32, 8);
-            layoutMessages.addView(tv);
-            scrollBottom();
-            return tv;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return new View(this);
-        }
-    }
-
-    void scrollBottom() {
-        try {
-            if (scrollChat != null)
-                scrollChat.post(() -> {
-                try {
-                    scrollChat.fullScroll(
-                        ScrollView.FOCUS_DOWN);
+                    JSONObject assistantMsg = new JSONObject();
+                    assistantMsg.put("role", "assistant");
+                    assistantMsg.put("content", reply);
+                    chatHistory.put(assistantMsg);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-            });
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
 
-    String getTime() {
-        return new SimpleDateFormat(
-            "hh:mm a",
-            Locale.getDefault())
-            .format(new Date());
-    }
-
-    void startVoice() {
-        try {
-            stopSpeaking();
-            Intent i = new Intent(
-                RecognizerIntent
-                .ACTION_RECOGNIZE_SPEECH);
-            i.putExtra(
-                RecognizerIntent
-                .EXTRA_LANGUAGE_MODEL,
-                RecognizerIntent
-                .LANGUAGE_MODEL_FREE_FORM);
-            i.putExtra(
-                RecognizerIntent.EXTRA_LANGUAGE,
-                "en-IN");
-            i.putExtra(
-                RecognizerIntent.EXTRA_PROMPT,
-                "Listening Boss...");
-            i.putExtra(
-                RecognizerIntent
-                .EXTRA_PARTIAL_RESULTS,
-                true);
-            startActivityForResult(i, 100);
-        } catch (Exception e) {
-            Toast.makeText(this,
-                "Voice not available Boss",
-                Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    protected void onActivityResult(
-        int req, int res, Intent data) {
-        super.onActivityResult(req, res, data);
-        try {
-            if (req == 100
-                && res == RESULT_OK
-                && data != null) {
-                ArrayList<String> r =
-                    data.getStringArrayListExtra(
-                    RecognizerIntent
-                    .EXTRA_RESULTS);
-                if (r != null
-                    && !r.isEmpty()) {
-                    sendToEcho(r.get(0));
+                if (action != null && !action.isEmpty()) {
+                    DeviceActions.handle(ChatActivity.this, action,
+                        (success, msg) -> {
+                            if (!success) {
+                                runOnUiThread(() -> addMessage("⚠️ " + msg, false));
+                            }
+                        });
                 }
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+
+            public void onError(String error) {
+                showTyping(false);
+                addMessage("⚠️ " + error, false);
+            }
+        });
+    }
+
+    void addMessage(String text, boolean isUser) {
+        runOnUiThread(() -> {
+            greetingLayout.setVisibility(View.GONE);
+
+            TextView tv = new TextView(this);
+            tv.setText(text);
+            tv.setTextSize(15);
+            tv.setTextColor(Color.parseColor("#2D2A26"));
+            tv.setPadding(dpToPx(18), dpToPx(12), dpToPx(18), dpToPx(12));
+            tv.setLineSpacing(0, 1.4f);
+
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT);
+            params.setMargins(0, 0, 0, dpToPx(10));
+            params.width = (int)(getResources().getDisplayMetrics().widthPixels * 0.80);
+
+            if (isUser) {
+                params.gravity = Gravity.END;
+                tv.setBackground(ContextCompat.getDrawable(this, R.drawable.user_bubble_bg));
+            } else {
+                params.gravity = Gravity.START;
+                tv.setBackground(ContextCompat.getDrawable(this, R.drawable.assistant_bubble_bg));
+            }
+
+            tv.setLayoutParams(params);
+            messagesContainer.addView(tv);
+
+            // Scroll to bottom
+            scrollView.post(() -> scrollView.fullScroll(View.FOCUS_DOWN));
+        });
+    }
+
+    void showTyping(boolean show) {
+        runOnUiThread(() ->
+            typingIndicator.setVisibility(show ? View.VISIBLE : View.GONE));
+    }
+
+    void speak(String text) {
+        if (tts != null) {
+            tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, null);
         }
     }
 
-    protected void onResume() {
-        super.onResume();
-        try {
-            GroqAPI.API_KEY =
-                AppPrefs.getApiKey(this);
-            voiceEnabled =
-                AppPrefs.isVoiceEnabled(this);
-        } catch (Exception e) {
-            e.printStackTrace();
+    void startVoiceInput() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+            != PackageManager.PERMISSION_GRANTED) return;
+
+        if (speechRecognizer != null) {
+            speechRecognizer.destroy();
         }
+
+        speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this);
+        Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+            RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "en-IN");
+        intent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
+
+        speechRecognizer.setRecognitionListener(new RecognitionListener() {
+            public void onReadyForSpeech(Bundle p) {}
+            public void onBeginningOfSpeech() {}
+            public void onRmsChanged(float r) {}
+            public void onBufferReceived(byte[] b) {}
+            public void onEndOfSpeech() {}
+            public void onPartialResults(Bundle b) {
+                ArrayList<String> r = b.getStringArrayList(
+                    SpeechRecognizer.RESULTS_RECOGNITION);
+                if (r != null && !r.isEmpty()) {
+                    inputMessage.setText(r.get(0));
+                }
+            }
+            public void onResults(Bundle b) {
+                ArrayList<String> r = b.getStringArrayList(
+                    SpeechRecognizer.RESULTS_RECOGNITION);
+                if (r != null && !r.isEmpty()) {
+                    inputMessage.setText(r.get(0));
+                    sendMessage();
+                }
+            }
+            public void onError(int e) {}
+            public void onEvent(int t, Bundle b) {}
+        });
+
+        speechRecognizer.startListening(intent);
     }
 
+    @Override
+    public void onRequestPermissionsResult(int code,
+        String[] permissions, int[] results) {
+        super.onRequestPermissionsResult(code, permissions, results);
+    }
+
+    int dpToPx(int dp) {
+        return (int)(dp * getResources().getDisplayMetrics().density);
+    }
+
+    @Override
     protected void onDestroy() {
         super.onDestroy();
-        try {
-            if (tts != null) {
-                tts.stop();
-                tts.shutdown();
-                tts = null;
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+        if (tts != null) tts.shutdown();
+        if (speechRecognizer != null) speechRecognizer.destroy();
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        if (intent.getBooleanExtra("wake_word", false)) {
+            startVoiceInput();
         }
     }
 }
