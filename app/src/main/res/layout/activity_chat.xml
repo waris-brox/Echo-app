@@ -148,14 +148,13 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:hint="Ask here..."
-                android:hintTextColor="@color/text_dim"
+                android:textColorHint="@color/text_dim"
                 android:textColor="@color/text"
                 android:textSize="15sp"
                 android:paddingVertical="10dp"
                 android:background="@null"
                 android:maxLines="4"
-                android:inputType="textMultiLine"
-                android:imeOptions="actionSend"/>
+                android:inputType="textMultiLine"/>
 
             <ImageButton
                 android:id="@+id/btn_voice"
