@@ -11,4 +11,7 @@
     <color name="user_bubble">#218B7355</color>
     <color name="white">#FFFFFF</color>
     <color name="border">#2E8B7355</color>
+    <color name="base">#F5F0EB</color>
+    <color name="text_main">#2D2A26</color>
+    <color name="olive">#8B7355</color>
 </resources>
