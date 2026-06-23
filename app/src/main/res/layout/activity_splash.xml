@@ -1,51 +1,66 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:gravity="center"
-    android:padding="32dp"
-    android:background="@color/surface">
+    android:background="@color/base"
+    android:padding="32dp">
 
     <ImageView
-        android:id="@+id/splash_logo"
-        android:layout_width="140dp"
-        android:layout_height="140dp"
-        android:src="@drawable/logo"
-        android:scaleType="fitCenter"
-        android:layout_marginBottom="28dp"/>
-
-    <TextView
-        android:id="@+id/splash_title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Echo"
-        android:textSize="36sp"
-        android:textColor="@color/accent"
-        android:letterSpacing="0.2"
-        android:fontFamily="sans-serif-light"
-        android:layout_marginBottom="8dp"/>
+        android:id="@+id/iv_logo"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:src="@drawable/bg_circle_olive"/>
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="YOUR INTELLIGENT COMPANION"
-        android:textSize="11sp"
+        android:text="echo"
+        android:textColor="@color/text_main"
+        android:textSize="28sp"
+        android:textStyle="bold"
+        android:letterSpacing="0.15"
+        android:layout_marginTop="16dp"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Your voice. Our echo."
         android:textColor="@color/text_muted"
-        android:letterSpacing="0.3"
-        android:layout_marginBottom="52dp"/>
+        android:textSize="16sp"
+        android:layout_marginTop="8dp"
+        android:gravity="center"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Ask anything. Get answers.\nYour AI companion is here."
+        android:textColor="@color/text_dim"
+        android:textSize="13sp"
+        android:gravity="center"
+        android:layout_marginTop="12dp"/>
 
     <Button
         android:id="@+id/btn_get_started"
+        android:layout_width="280dp"
+        android:layout_height="52dp"
+        android:text="Get Started"
+        android:textColor="@color/white"
+        android:background="@drawable/bg_btn_primary"
+        android:layout_marginTop="48dp"
+        android:textSize="15sp"
+        android:textStyle="bold"/>
+
+    <TextView
+        android:id="@+id/tv_login"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="GET STARTED  →"
-        android:textSize="13sp"
-        android:letterSpacing="0.2"
-        android:paddingHorizontal="48dp"
-        android:paddingVertical="16dp"
-        android:backgroundTint="@color/accent_light"
-        android:textColor="@color/text"
-        android:stateListAnimator="@null"/>
+        android:text="Log In"
+        android:textColor="@color/olive"
+        android:textSize="14sp"
+        android:layout_marginTop="20dp"
+        android:padding="8dp"/>
 
 </LinearLayout>
