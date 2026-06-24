@@ -4,7 +4,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.provider.Settings;
-import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.Switch;
 import android.widget.TextView;
@@ -23,26 +22,20 @@ public class SettingsActivity extends AppCompatActivity {
 
         prefs = getSharedPreferences("echo_prefs", MODE_PRIVATE);
 
-        // Back button
         findViewById(R.id.btn_back).setOnClickListener(v -> finish());
 
-        // API Key
         updateApiStatus();
         findViewById(R.id.item_api_key).setOnClickListener(v -> showApiKeyDialog());
 
-        // Accessibility
-        findViewById(R.id.item_accessibility).setOnClickListener(v -> {
-            startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
-        });
+        findViewById(R.id.item_accessibility).setOnClickListener(v ->
+            startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)));
 
-        // Write Settings
         findViewById(R.id.item_write_settings).setOnClickListener(v -> {
             Intent i = new Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS);
             i.setData(android.net.Uri.parse("package:" + getPackageName()));
             startActivity(i);
         });
 
-        // Wake word toggle
         Switch wakeSwitch = findViewById(R.id.switch_wake);
         boolean wakeEnabled = prefs.getBoolean("wake_enabled", true);
         wakeSwitch.setChecked(wakeEnabled);
@@ -57,12 +50,10 @@ public class SettingsActivity extends AppCompatActivity {
             }
         });
 
-        // Support
-        findViewById(R.id.item_support).setOnClickListener(v -> {
+        findViewById(R.id.item_support).setOnClickListener(v ->
             Toast.makeText(this,
                 "Email: echo.ai.virtual.assistant@gmail.com",
-                Toast.LENGTH_LONG).show();
-        });
+                Toast.LENGTH_LONG).show());
     }
 
     void showApiKeyDialog() {
@@ -88,6 +79,7 @@ public class SettingsActivity extends AppCompatActivity {
     void updateApiStatus() {
         String key = prefs.getString("groq_api_key", "");
         TextView status = findViewById(R.id.tv_api_status);
+        if (status == null) return;
         if (key.isEmpty()) {
             status.setText("⚠️ Not set — tap to add");
         } else {

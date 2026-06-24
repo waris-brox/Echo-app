@@ -20,45 +20,25 @@ import android.os.Bundle;
 public class EchoWakeService extends Service {
 
     private SpeechRecognizer sr;
-    private Handler h =
-        new Handler(Looper.getMainLooper());
+    private Handler h = new Handler(Looper.getMainLooper());
     private boolean listening = false;
     private boolean running = false;
-    private AudioManager am;
+    private AudioManager audioManager;
 
-    public int onStartCommand(Intent i,
-        int f, int s) {
+    public int onStartCommand(Intent i, int f, int s) {
         running = true;
-        am = (AudioManager) getSystemService(
-            AUDIO_SERVICE);
+        audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
         showNotification();
-        h.postDelayed(
-            this::startListening, 1500);
+        h.postDelayed(this::startListening, 1000);
         return START_STICKY;
     }
 
-    void silenceBeep() {
+    void muteSystemBeeps(boolean mute) {
         try {
-            if (am == null) return;
-            // Silence notification stream
-            // to remove mic beep sound
-            am.setStreamVolume(
-                AudioManager.STREAM_NOTIFICATION,
-                0, 0);
-            am.setStreamMute(
-                AudioManager.STREAM_NOTIFICATION,
-                true);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    void restoreSound() {
-        try {
-            if (am == null) return;
-            am.setStreamMute(
-                AudioManager.STREAM_NOTIFICATION,
-                false);
+            if (audioManager != null) {
+                audioManager.setStreamMute(
+                    AudioManager.STREAM_SYSTEM, mute);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -66,190 +46,115 @@ public class EchoWakeService extends Service {
 
     void startListening() {
         if (!running || listening) return;
+
         try {
             if (checkSelfPermission(
-                android.Manifest.permission
-                .RECORD_AUDIO)
-                != PackageManager
-                .PERMISSION_GRANTED) {
-                h.postDelayed(
-                    this::startListening,
-                    5000);
-                return;
-            }
-            if (!SpeechRecognizer
-                .isRecognitionAvailable(this)) {
-                h.postDelayed(
-                    this::startListening,
-                    5000);
+                android.Manifest.permission.RECORD_AUDIO)
+                != PackageManager.PERMISSION_GRANTED) {
+                h.postDelayed(this::startListening, 5000);
                 return;
             }
 
-            silenceBeep();
+            if (!SpeechRecognizer.isRecognitionAvailable(this)) {
+                h.postDelayed(this::startListening, 5000);
+                return;
+            }
 
             Intent i = new Intent(
-                RecognizerIntent
-                .ACTION_RECOGNIZE_SPEECH);
-            i.putExtra(
-                RecognizerIntent
-                .EXTRA_LANGUAGE_MODEL,
-                RecognizerIntent
-                .LANGUAGE_MODEL_FREE_FORM);
-            i.putExtra(
-                RecognizerIntent.EXTRA_LANGUAGE,
-                "en-IN");
-            i.putExtra(
-                RecognizerIntent
-                .EXTRA_CALLING_PACKAGE,
+                RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+            i.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+            i.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "en-IN");
+            i.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE,
                 getPackageName());
-            i.putExtra(
-                RecognizerIntent
-                .EXTRA_PARTIAL_RESULTS, true);
-            i.putExtra(
-                RecognizerIntent
+            i.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
+            i.putExtra("android.speech.extra.DICTATION_MODE", true);
+            i.putExtra(RecognizerIntent
                 .EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS,
-                5000L);
-            i.putExtra(
-                RecognizerIntent
+                3000);
+            i.putExtra(RecognizerIntent
                 .EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS,
-                5000L);
-            i.putExtra(
-                RecognizerIntent
-                .EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS,
-                1000L);
+                3000);
 
-            sr = SpeechRecognizer
-                .createSpeechRecognizer(this);
-            sr.setRecognitionListener(
-                new RecognitionListener() {
+            sr = SpeechRecognizer.createSpeechRecognizer(this);
+            sr.setRecognitionListener(new RecognitionListener() {
 
-                public void onReadyForSpeech(
-                    Bundle b) {
+                public void onReadyForSpeech(Bundle b) {
                     listening = true;
-                    // Restore sound after
-                    // beep would have played
-                    h.postDelayed(
-                        () -> restoreSound(),
-                        500);
                 }
 
-                public void onBeginningOfSpeech()
-                    {}
+                public void onBeginningOfSpeech() {}
 
-                public void onRmsChanged(
-                    float r) {}
+                public void onRmsChanged(float r) {}
 
-                public void onBufferReceived(
-                    byte[] b) {}
+                public void onBufferReceived(byte[] b) {}
 
                 public void onEndOfSpeech() {}
 
-                public void onPartialResults(
-                    Bundle b) {
-                    try {
-                        ArrayList<String> r =
-                            b.getStringArrayList(
-                            SpeechRecognizer
-                            .RESULTS_RECOGNITION);
-                        if (r != null) {
-                            for (String s : r) {
-                                if (isWakeWord(
-                                    s)) {
-                                    wakeUp();
-                                    return;
-                                }
-                            }
-                        }
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-
-                public void onResults(
-                    Bundle b) {
-                    try {
-                        listening = false;
-                        ArrayList<String> r =
-                            b.getStringArrayList(
-                            SpeechRecognizer
-                            .RESULTS_RECOGNITION);
-                        if (r != null) {
-                            for (String s : r) {
-                                if (isWakeWord(
-                                    s)) {
-                                    wakeUp();
-                                    return;
-                                }
-                            }
-                        }
-                        h.postDelayed(
-                            () -> startListening(),
-                            300);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        h.postDelayed(
-                            () -> startListening(),
-                            1000);
-                    }
-                }
-
-                public void onError(int error) {
+                public void onResults(Bundle b) {
                     listening = false;
-                    restoreSound();
-                    long delay = 1000;
-                    if (error ==
-                        SpeechRecognizer
-                        .ERROR_RECOGNIZER_BUSY)
-                        delay = 2000;
-                    if (error ==
-                        SpeechRecognizer
-                        .ERROR_NETWORK)
-                        delay = 3000;
-                    h.postDelayed(
-                        () -> startListening(),
-                        delay);
+                    ArrayList<String> r = b.getStringArrayList(
+                        SpeechRecognizer.RESULTS_RECOGNITION);
+                    if (r != null) {
+                        for (String str : r) {
+                            if (str.toLowerCase()
+                                .contains("echo")) {
+                                wakeUp();
+                                return;
+                            }
+                        }
+                    }
+                    h.postDelayed(() -> startListening(), 1500);
                 }
 
-                public void onEvent(int t,
-                    Bundle b) {}
+                public void onPartialResults(Bundle b) {
+                    ArrayList<String> r = b.getStringArrayList(
+                        SpeechRecognizer.RESULTS_RECOGNITION);
+                    if (r != null) {
+                        for (String str : r) {
+                            if (str.toLowerCase()
+                                .contains("echo")) {
+                                wakeUp();
+                                return;
+                            }
+                        }
+                    }
+                }
+
+                public void onError(int e) {
+                    listening = false;
+                    long delay = (e == SpeechRecognizer.ERROR_NO_MATCH
+                        || e == SpeechRecognizer.ERROR_SPEECH_TIMEOUT)
+                        ? 1500 : 3000;
+                    h.postDelayed(() -> startListening(), delay);
+                }
+
+                public void onEvent(int t, Bundle b) {}
             });
 
+            muteSystemBeeps(true);
             sr.startListening(i);
+            h.postDelayed(() -> muteSystemBeeps(false), 500);
 
         } catch (Exception e) {
             e.printStackTrace();
-            listening = false;
-            h.postDelayed(
-                this::startListening, 2000);
+            muteSystemBeeps(false);
+            h.postDelayed(this::startListening, 3000);
         }
-    }
-
-    boolean isWakeWord(String s) {
-        if (s == null) return false;
-        String lower = s.toLowerCase().trim();
-        return lower.equals("echo")
-            || lower.contains("hello echo")
-            || lower.contains("hey echo")
-            || lower.contains("ok echo")
-            || lower.startsWith("echo ")
-            || lower.endsWith(" echo");
     }
 
     void wakeUp() {
         try {
             listening = false;
-            if (sr != null)
-                sr.stopListening();
-            Intent i = new Intent(
-                this, MainActivity.class);
-            i.addFlags(
-                Intent.FLAG_ACTIVITY_NEW_TASK
-                | Intent
-                .FLAG_ACTIVITY_SINGLE_TOP);
+            if (sr != null) sr.stopListening();
+
+            Intent i = new Intent(this, MainActivity.class);
+            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
+                | Intent.FLAG_ACTIVITY_SINGLE_TOP);
             i.putExtra("wake_word", true);
             startActivity(i);
-            h.postDelayed(
-                this::startListening, 5000);
+
+            h.postDelayed(this::startListening, 4000);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -258,30 +163,19 @@ public class EchoWakeService extends Service {
     void showNotification() {
         try {
             String CH = "echo_wake";
-            NotificationManager nm =
-                (NotificationManager)
-                getSystemService(
-                NOTIFICATION_SERVICE);
+            NotificationManager nm = (NotificationManager)
+                getSystemService(NOTIFICATION_SERVICE);
             if (Build.VERSION.SDK_INT >= 26) {
-                NotificationChannel ch =
-                    new NotificationChannel(
-                    CH, "Echo Listening",
-                    NotificationManager
-                    .IMPORTANCE_LOW);
+                NotificationChannel ch = new NotificationChannel(
+                    CH, "Echo Wake Word",
+                    NotificationManager.IMPORTANCE_LOW);
                 ch.setSound(null, null);
-                ch.enableVibration(false);
                 nm.createNotificationChannel(ch);
             }
-            Notification n =
-                new Notification.Builder(
-                this, CH)
-                .setContentTitle("Echo")
-                .setContentText(
-                "Listening for wake word...")
-                .setSmallIcon(
-                android.R.drawable
-                .ic_btn_speak_now)
-                .setOngoing(true)
+            Notification n = new Notification.Builder(this, CH)
+                .setContentTitle("Echo is listening")
+                .setContentText("Say Echo to wake me up Boss")
+                .setSmallIcon(android.R.drawable.ic_btn_speak_now)
                 .build();
             startForeground(1, n);
         } catch (Exception e) {
@@ -296,6 +190,7 @@ public class EchoWakeService extends Service {
     public void onDestroy() {
         super.onDestroy();
         running = false;
+        muteSystemBeeps(false);
         try {
             if (sr != null) sr.destroy();
         } catch (Exception e) {
@@ -303,9 +198,7 @@ public class EchoWakeService extends Service {
         }
         h.postDelayed(() -> {
             try {
-                startService(new Intent(
-                    this,
-                    EchoWakeService.class));
+                startService(new Intent(this, EchoWakeService.class));
             } catch (Exception e) {
                 e.printStackTrace();
             }
