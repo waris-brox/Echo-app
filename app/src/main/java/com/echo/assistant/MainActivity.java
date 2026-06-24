@@ -130,7 +130,7 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 if (action != null && !action.isEmpty()) {
-                    DeviceActions.handle(ChatActivity.this, action,
+                    DeviceActions.handle(MainActivity.this, action,
                         (success, msg) -> {
                             if (!success) {
                                 runOnUiThread(() -> addMessage("⚠️ " + msg, false));
