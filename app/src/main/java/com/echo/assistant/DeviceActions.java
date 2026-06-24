@@ -63,6 +63,9 @@ public class DeviceActions {
                 case "youtube_search":
                     youtubeSearch(ctx, p.optString("query", target), result);
                     break;
+ 		case "google_search":
+                    googleSearch(ctx, p.optString("query", target), result);
+                    break;
                 case "toggle_wifi":
                     toggleWifi(ctx, p.optString("state","on"), result);
                     break;
@@ -294,7 +297,20 @@ public class DeviceActions {
             r.onResult(true, "Searching YouTube for " + query);
         }
     }
-
+    
+    static void googleSearch(Context c, String query, Result r) {
+        try {
+            Intent i = new Intent(Intent.ACTION_VIEW,
+                Uri.parse("https://www.google.com/search?q="
+                    + Uri.encode(query)));
+            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            c.startActivity(i);
+            r.onResult(true, "Searching Google for " + query);
+        } catch (Exception e) {
+            e.printStackTrace();
+            r.onResult(false, "Google search failed: " + e.getMessage());
+        }
+    }
     static void openApp(Context c, String name, Result r) {
         try {
             String lname = name.toLowerCase().trim();
