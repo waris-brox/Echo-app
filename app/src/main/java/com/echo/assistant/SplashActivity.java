@@ -6,6 +6,7 @@ import android.view.animation.AlphaAnimation;
 import android.view.animation.ScaleAnimation;
 import android.view.animation.AnimationSet;
 import android.view.View;
+import android.content.SharedPreferences;
 import androidx.appcompat.app.AppCompatActivity;
 
 public class SplashActivity extends AppCompatActivity {
