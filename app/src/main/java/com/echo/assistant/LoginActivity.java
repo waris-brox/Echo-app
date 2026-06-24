@@ -35,9 +35,9 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     void goToChat(String name) {
-        Intent i = new Intent(this, MainActivity.class);
-        i.putExtra("user_name", name);
-        startActivity(i);
-        finish();
-    }
+    Intent i = new Intent(this, MainActivity.class);
+    i.putExtra("user_name", name);
+    startActivity(i);
+    finish();
+}
 }
