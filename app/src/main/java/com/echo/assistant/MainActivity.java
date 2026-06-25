@@ -187,7 +187,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         try {
-            GroqAPI.ask(chatHistory, text, new GroqAPI.Callback() {
+            GroqAPI.ask(chatHistory, text, userName, new GroqAPI.Callback() {
                 public void onSuccess(String reply, String action) {
                     runOnUiThread(() -> {
                         showTyping(false);

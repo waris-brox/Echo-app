@@ -80,7 +80,9 @@ public class VoiceActivity extends Activity {
     }
 
     void askEcho(String query) {
-        GroqAPI.ask(new org.json.JSONArray(), query, new GroqAPI.Callback() {
+        SharedPreferences prefs = getSharedPreferences("echo_prefs", MODE_PRIVATE);
+String userName = prefs.getString("user_name", "there");
+GroqAPI.ask(new org.json.JSONArray(), query, userName, new GroqAPI.Callback() {
             public void onSuccess(String reply, String action) {
                 if (tts != null && !reply.isEmpty()) {
                     tts.speak(reply, TextToSpeech.QUEUE_FLUSH, null, "echo_reply");

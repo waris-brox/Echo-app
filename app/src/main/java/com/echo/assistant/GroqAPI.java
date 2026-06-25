@@ -23,8 +23,7 @@ public class GroqAPI {
         void onError(String error);
     }
 
-    public static void ask(JSONArray history,
-        String message, Callback cb) {
+    public static void ask(JSONArray history, String message, String userName, Callback cb) {
         new AsyncTask<Void, Void, String[]>() {
             protected String[] doInBackground(
                 Void... v) {
@@ -35,7 +34,7 @@ public class GroqAPI {
                         new JSONObject();
                     sys.put("role", "system");
                     sys.put("content",
-                        getPrompt());
+			getPrompt(userName));
                     msgs.put(sys);
                     for (int i = 0;
                         i < history.length();
