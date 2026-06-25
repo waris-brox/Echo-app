@@ -14,13 +14,16 @@ android {
     }
 
     buildTypes {
-        release {
-            minifyEnabled false
-        }
-        debug {
-            debuggable true
-        }
+    release {
+        minifyEnabled true
+        shrinkResources true
+        proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
     }
+    debug {
+        minifyEnabled true
+        proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+      }
+  }
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17

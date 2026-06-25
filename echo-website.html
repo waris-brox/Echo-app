@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Echo — Your AI Friend</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+  <style>
+    /* ─── TOKENS ──────────────────────────────────────────────── */
+    :root {
+      --bg:        #080810;
+      --surface:   #0e0e1a;
+      --card:      #12121f;
+      --border:    rgba(120,100,255,0.15);
+      --glow:      #7c5cfc;
+      --glow2:     #c97bff;
+      --accent:    #a78bfa;
+      --gold:      #f0c060;
+      --text:      #e8e0ff;
+      --muted:     #7a738c;
+      --white:     #ffffff;
+      --font-head: 'Syne', sans-serif;
+      --font-body: 'Inter', sans-serif;
+      --font-mono: 'Space Mono', monospace;
+    }
+
+    /* ─── RESET ───────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      overflow-x: hidden;
+      line-height: 1.6;
+    }
+    a { text-decoration: none; color: inherit; }
+    img { max-width: 100%; }
+
+    /* ─── SCROLLBAR ───────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--glow); border-radius: 2px; }
+
+    /* ─── CANVAS BG ───────────────────────────────────────────── */
+    #bg-canvas {
+      position: fixed; inset: 0;
+      z-index: 0; pointer-events: none;
+      opacity: 0.55;
+    }
+
+    /* ─── NAV ─────────────────────────────────────────────────── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 6vw;
+      background: rgba(8,8,16,0.6);
+      backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--border);
+      transition: padding 0.3s;
+    }
+    .nav-logo {
+      display: flex; align-items: center; gap: 12px;
+    }
+    .nav-logo-img {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      border: 2px solid var(--glow);
+      box-shadow: 0 0 14px rgba(124,92,252,0.55);
+      object-fit: cover;
+      background: var(--surface);
+      overflow: hidden;
+    }
+    .nav-logo-img img {
+      width: 100%; height: 100%; object-fit: cover;
+      border-radius: 50%;
+    }
+    .nav-brand {
+      font-family: var(--font-head);
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      background: linear-gradient(135deg, var(--accent), var(--glow2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .nav-links {
+      display: flex; gap: 32px; list-style: none;
+    }
+    .nav-links a {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--accent); }
+    .nav-cta {
+      padding: 9px 22px;
+      border-radius: 100px;
+      background: linear-gradient(135deg, var(--glow), var(--glow2));
+      font-family: var(--font-head);
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #fff;
+      box-shadow: 0 0 22px rgba(124,92,252,0.45);
+      transition: box-shadow 0.3s, transform 0.2s;
+      cursor: pointer;
+      border: none;
+    }
+    .nav-cta:hover {
+      box-shadow: 0 0 38px rgba(124,92,252,0.7);
+      transform: translateY(-1px);
+    }
+
+    /* ─── SECTIONS WRAPPER ────────────────────────────────────── */
+    main { position: relative; z-index: 1; }
+
+    /* ─── HERO ────────────────────────────────────────────────── */
+    #hero {
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center;
+      padding: 120px 6vw 80px;
+      position: relative;
+    }
+    .hero-eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 16px;
+      border-radius: 100px;
+      border: 1px solid var(--border);
+      background: rgba(124,92,252,0.08);
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      color: var(--accent);
+      margin-bottom: 32px;
+      animation: fadeUp 0.8s ease both;
+    }
+    .hero-eyebrow span.dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--glow);
+      box-shadow: 0 0 8px var(--glow);
+      animation: pulse 1.6s ease-in-out infinite;
+    }
+    .hero-title {
+      font-family: var(--font-head);
+      font-size: clamp(3.2rem, 9vw, 7.5rem);
+      font-weight: 800;
+      line-height: 1.0;
+      letter-spacing: -0.03em;
+      margin-bottom: 8px;
+      animation: fadeUp 0.85s 0.1s ease both;
+    }
+    .hero-title .gradient-text {
+      background: linear-gradient(135deg, var(--accent) 0%, var(--glow2) 50%, var(--gold) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero-subtitle-line {
+      font-family: var(--font-head);
+      font-size: clamp(1rem, 2.5vw, 1.6rem);
+      font-weight: 400;
+      color: var(--muted);
+      margin-bottom: 28px;
+      animation: fadeUp 0.85s 0.2s ease both;
+    }
+    .hero-desc {
+      max-width: 560px;
+      font-size: 1rem;
+      color: var(--muted);
+      line-height: 1.75;
+      margin: 0 auto 48px;
+      animation: fadeUp 0.85s 0.3s ease both;
+    }
+    .hero-buttons {
+      display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;
+      animation: fadeUp 0.85s 0.4s ease both;
+    }
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 16px 36px;
+      border-radius: 100px;
+      background: linear-gradient(135deg, var(--glow) 0%, var(--glow2) 100%);
+      font-family: var(--font-head);
+      font-size: 1rem;
+      font-weight: 700;
+      color: #fff;
+      box-shadow: 0 8px 40px rgba(124,92,252,0.45), 0 2px 8px rgba(0,0,0,0.4);
+      transition: all 0.3s;
+      cursor: pointer;
+      border: none;
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-primary::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent);
+      border-radius: inherit;
+    }
+    .btn-primary:hover {
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: 0 14px 50px rgba(124,92,252,0.65), 0 4px 16px rgba(0,0,0,0.5);
+    }
+    .btn-secondary {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 16px 36px;
+      border-radius: 100px;
+      background: transparent;
+      border: 1px solid rgba(167,139,250,0.35);
+      font-family: var(--font-head);
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--accent);
+      transition: all 0.3s;
+      cursor: pointer;
+    }
+    .btn-secondary:hover {
+      background: rgba(124,92,252,0.1);
+      border-color: var(--accent);
+      transform: translateY(-2px);
+    }
+
+    /* 3-D ORB */
+    .hero-orb-wrap {
+      margin-top: 64px;
+      position: relative;
+      display: flex; align-items: center; justify-content: center;
+      animation: fadeUp 1s 0.5s ease both;
+    }
+    .orb-ring {
+      position: absolute;
+      border-radius: 50%;
+      border: 1px solid;
+      animation: spinRing linear infinite;
+    }
+    .orb-ring-1 {
+      width: 280px; height: 280px;
+      border-color: rgba(124,92,252,0.3);
+      animation-duration: 14s;
+      transform: rotateX(72deg);
+    }
+    .orb-ring-2 {
+      width: 340px; height: 340px;
+      border-color: rgba(201,123,255,0.2);
+      animation-duration: 22s;
+      animation-direction: reverse;
+      transform: rotateX(72deg) rotateY(40deg);
+    }
+    .orb-ring-3 {
+      width: 400px; height: 400px;
+      border-color: rgba(167,139,250,0.1);
+      animation-duration: 30s;
+      transform: rotateX(60deg) rotateY(-30deg);
+    }
+    .orb-core {
+      width: 180px; height: 180px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 38% 36%,
+        rgba(201,123,255,0.9) 0%,
+        rgba(124,92,252,0.8) 35%,
+        rgba(60,30,120,0.9) 70%,
+        rgba(8,8,16,1) 100%);
+      box-shadow:
+        0 0 60px rgba(124,92,252,0.7),
+        0 0 120px rgba(201,123,255,0.3),
+        inset 0 0 40px rgba(255,255,255,0.06);
+      display: flex; align-items: center; justify-content: center;
+      position: relative;
+      animation: orbFloat 5s ease-in-out infinite;
+    }
+    .orb-logo-inner {
+      width: 90px; height: 90px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 2px solid rgba(255,255,255,0.2);
+      background: rgba(0,0,0,0.3);
+    }
+    .orb-logo-inner img {
+      width: 100%; height: 100%; object-fit: cover;
+    }
+    .orb-logo-placeholder {
+      width: 100%; height: 100%;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-head);
+      font-size: 2.2rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent), var(--glow2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    /* Floating particles around orb */
+    .orb-particle {
+      position: absolute;
+      border-radius: 50%;
+      background: var(--glow);
+      box-shadow: 0 0 8px var(--glow);
+      animation: particleFloat linear infinite;
+    }
+
+    /* ─── SECTION BASE ────────────────────────────────────────── */
+    section {
+      padding: 100px 6vw;
+      position: relative;
+    }
+    .section-eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 14px;
+    }
+    .section-title {
+      font-family: var(--font-head);
+      font-size: clamp(2rem, 4.5vw, 3.2rem);
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      margin-bottom: 16px;
+    }
+    .section-desc {
+      font-size: 1rem;
+      color: var(--muted);
+      max-width: 520px;
+      line-height: 1.75;
+    }
+    .section-header { margin-bottom: 60px; }
+
+    /* ─── DIVIDER LINE ────────────────────────────────────────── */
+    .divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border), transparent);
+      margin: 0 6vw;
+    }
+
+    /* ─── FEATURES GRID ───────────────────────────────────────── */
+    #features { background: var(--surface); }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+      gap: 20px;
+    }
+    .feature-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 32px 28px;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.3s, border-color 0.3s, box-shadow 0.3s;
+      cursor: default;
+    }
+    .feature-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(124,92,252,0.5), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .feature-card:hover {
+      transform: translateY(-6px);
+      border-color: rgba(124,92,252,0.4);
+      box-shadow: 0 16px 60px rgba(124,92,252,0.15);
+    }
+    .feature-card:hover::before { opacity: 1; }
+    .feature-icon {
+      width: 52px; height: 52px;
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem;
+      margin-bottom: 20px;
+      position: relative;
+    }
+    .feature-icon::after {
+      content: '';
+      position: absolute; inset: 0;
+      border-radius: 14px;
+      opacity: 0.15;
+    }
+    .fi-purple { background: rgba(124,92,252,0.15); color: var(--accent); }
+    .fi-purple::after { background: var(--glow); }
+    .fi-pink   { background: rgba(201,123,255,0.12); color: var(--glow2); }
+    .fi-pink::after { background: var(--glow2); }
+    .fi-gold   { background: rgba(240,192,96,0.12); color: var(--gold); }
+    .fi-gold::after { background: var(--gold); }
+    .fi-teal   { background: rgba(56,200,180,0.12); color: #38c8b4; }
+    .fi-teal::after { background: #38c8b4; }
+    .feature-title {
+      font-family: var(--font-head);
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 10px;
+      color: var(--white);
+    }
+    .feature-desc {
+      font-size: 0.875rem;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+    /* 3d depth card glow */
+    .feature-card .card-glow {
+      position: absolute; bottom: -30px; right: -30px;
+      width: 100px; height: 100px;
+      border-radius: 50%;
+      opacity: 0.06;
+      filter: blur(30px);
+      transition: opacity 0.3s;
+    }
+    .feature-card:hover .card-glow { opacity: 0.18; }
+    .glow-purple { background: var(--glow); }
+    .glow-pink   { background: var(--glow2); }
+    .glow-gold   { background: var(--gold); }
+    .glow-teal   { background: #38c8b4; }
+
+    /* ─── SHOWCASE / HOW IT WORKS ─────────────────────────────── */
+    #how {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      align-items: center;
+    }
+    @media (max-width: 860px) {
+      #how { grid-template-columns: 1fr; gap: 40px; }
+    }
+    .how-visual {
+      position: relative;
+      display: flex; align-items: center; justify-content: center;
+      min-height: 400px;
+    }
+    .phone-mockup {
+      width: 220px;
+      background: linear-gradient(165deg, #1a1a2e, #12122a);
+      border-radius: 36px;
+      border: 1.5px solid rgba(124,92,252,0.3);
+      box-shadow:
+        0 0 0 1px rgba(0,0,0,0.5),
+        0 30px 80px rgba(0,0,0,0.7),
+        0 0 60px rgba(124,92,252,0.15),
+        inset 0 1px 0 rgba(255,255,255,0.04);
+      padding: 14px 12px;
+      position: relative;
+      z-index: 2;
+      transform: perspective(800px) rotateY(-8deg) rotateX(3deg);
+      transition: transform 0.4s;
+    }
+    .phone-mockup:hover {
+      transform: perspective(800px) rotateY(-3deg) rotateX(1deg);
+    }
+    .phone-notch {
+      width: 70px; height: 8px;
+      background: #0a0a18;
+      border-radius: 100px;
+      margin: 0 auto 12px;
+    }
+    .phone-screen {
+      background: var(--bg);
+      border-radius: 24px;
+      padding: 16px 12px;
+      min-height: 360px;
+      overflow: hidden;
+    }
+    .chat-bubble-out {
+      background: linear-gradient(135deg, var(--glow), var(--glow2));
+      border-radius: 16px 16px 4px 16px;
+      padding: 10px 13px;
+      font-size: 0.7rem;
+      color: #fff;
+      margin-bottom: 10px;
+      margin-left: auto;
+      max-width: 80%;
+      line-height: 1.45;
+      animation: chatIn 0.4s ease both;
+    }
+    .chat-bubble-in {
+      background: rgba(124,92,252,0.12);
+      border: 1px solid rgba(124,92,252,0.2);
+      border-radius: 16px 16px 16px 4px;
+      padding: 10px 13px;
+      font-size: 0.7rem;
+      color: var(--text);
+      max-width: 85%;
+      margin-bottom: 10px;
+      line-height: 1.45;
+      animation: chatIn 0.4s 0.15s ease both;
+    }
+    .chat-ts {
+      font-family: var(--font-mono);
+      font-size: 0.55rem;
+      color: var(--muted);
+      margin-bottom: 14px;
+      text-align: center;
+    }
+    .chat-typing {
+      display: flex; gap: 4px; align-items: center;
+      padding: 10px 13px;
+      background: rgba(124,92,252,0.08);
+      border-radius: 16px 16px 16px 4px;
+      width: fit-content;
+    }
+    .typing-dot {
+      width: 5px; height: 5px;
+      background: var(--accent);
+      border-radius: 50%;
+      animation: typingDot 1.2s ease-in-out infinite;
+    }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+    /* glow blobs behind phone */
+    .how-blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(60px);
+      pointer-events: none;
+    }
+    .how-blob-1 {
+      width: 250px; height: 250px;
+      background: rgba(124,92,252,0.2);
+      top: 50%; left: 50%;
+      transform: translate(-60%, -50%);
+    }
+    .how-blob-2 {
+      width: 180px; height: 180px;
+      background: rgba(201,123,255,0.15);
+      top: 30%; right: 10%;
+    }
+    .how-steps {
+      display: flex; flex-direction: column; gap: 32px;
+    }
+    .how-step {
+      display: flex; gap: 20px; align-items: flex-start;
+    }
+    .step-num {
+      min-width: 44px; height: 44px;
+      border-radius: 12px;
+      background: rgba(124,92,252,0.1);
+      border: 1px solid rgba(124,92,252,0.25);
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    .step-content h4 {
+      font-family: var(--font-head);
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--white);
+      margin-bottom: 5px;
+    }
+    .step-content p {
+      font-size: 0.875rem;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+
+    /* ─── DOWNLOAD SECTION ───────────────────────────────────── */
+    #download {
+      text-align: center;
+      padding: 120px 6vw;
+    }
+    .download-card {
+      max-width: 760px;
+      margin: 0 auto;
+      background: linear-gradient(145deg, rgba(124,92,252,0.08), rgba(201,123,255,0.05));
+      border: 1px solid rgba(124,92,252,0.25);
+      border-radius: 32px;
+      padding: 64px 48px;
+      position: relative;
+      overflow: hidden;
+    }
+    .download-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--glow), var(--glow2), transparent);
+    }
+    .download-card-glow {
+      position: absolute; inset: 0;
+      background: radial-gradient(circle at 50% 0%, rgba(124,92,252,0.12), transparent 70%);
+      pointer-events: none;
+    }
+    .download-version {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 5px 14px;
+      border-radius: 100px;
+      background: rgba(240,192,96,0.1);
+      border: 1px solid rgba(240,192,96,0.25);
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--gold);
+      margin-bottom: 24px;
+    }
+    .download-title {
+      font-family: var(--font-head);
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: 16px;
+    }
+    .download-desc {
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.75;
+      max-width: 480px;
+      margin: 0 auto 40px;
+    }
+    .download-btn {
+      display: inline-flex; align-items: center; gap: 14px;
+      padding: 20px 48px;
+      border-radius: 100px;
+      background: linear-gradient(135deg, var(--glow) 0%, var(--glow2) 100%);
+      font-family: var(--font-head);
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: #fff;
+      box-shadow:
+        0 8px 40px rgba(124,92,252,0.5),
+        0 2px 8px rgba(0,0,0,0.4),
+        inset 0 1px 0 rgba(255,255,255,0.15);
+      transition: all 0.3s;
+      cursor: pointer;
+      border: none;
+      position: relative;
+      overflow: hidden;
+      text-decoration: none;
+    }
+    .download-btn::before {
+      content: '';
+      position: absolute; top: 0; left: -100%;
+      width: 100%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
+      transition: left 0.5s;
+    }
+    .download-btn:hover::before { left: 100%; }
+    .download-btn:hover {
+      transform: translateY(-4px) scale(1.03);
+      box-shadow: 0 16px 60px rgba(124,92,252,0.65), 0 4px 16px rgba(0,0,0,0.5);
+    }
+    .download-btn svg { flex-shrink: 0; }
+    .download-meta {
+      margin-top: 24px;
+      display: flex; align-items: center; justify-content: center; gap: 20px;
+      flex-wrap: wrap;
+    }
+    .dl-meta-item {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    .dl-meta-item svg { color: var(--accent); }
+
+    /* ─── FOOTER ──────────────────────────────────────────────── */
+    footer {
+      text-align: center;
+      padding: 40px 6vw;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .footer-brand {
+      font-family: var(--font-head);
+      font-size: 1.4rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent), var(--glow2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+    }
+    .footer-text {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    .footer-links {
+      display: flex; justify-content: center; gap: 24px;
+      margin-top: 16px; flex-wrap: wrap;
+    }
+    .footer-links a {
+      font-size: 0.78rem;
+      color: var(--muted);
+      transition: color 0.2s;
+    }
+    .footer-links a:hover { color: var(--accent); }
+
+    /* ─── ANIMATIONS ──────────────────────────────────────────── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.5; transform: scale(0.8); }
+    }
+    @keyframes spinRing {
+      from { transform: rotateX(72deg) rotateZ(0deg); }
+      to   { transform: rotateX(72deg) rotateZ(360deg); }
+    }
+    @keyframes orbFloat {
+      0%, 100% { transform: translateY(0px); }
+      50%       { transform: translateY(-14px); }
+    }
+    @keyframes particleFloat {
+      0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(-80px) rotate(360deg); opacity: 0; }
+    }
+    @keyframes typingDot {
+      0%, 100% { transform: translateY(0); opacity: 0.4; }
+      50%       { transform: translateY(-4px); opacity: 1; }
+    }
+    @keyframes chatIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Scroll reveal */
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.65s ease, transform 0.65s ease;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ─── RESPONSIVE ──────────────────────────────────────────── */
+    @media (max-width: 640px) {
+      .nav-links { display: none; }
+      .download-card { padding: 40px 24px; }
+      .phone-mockup { width: 185px; }
+    }
+
+    /* ─── STATS BAR ───────────────────────────────────────────── */
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      overflow: hidden;
+      margin-top: 80px;
+    }
+    .stat-item {
+      background: var(--surface);
+      padding: 28px 24px;
+      text-align: center;
+    }
+    .stat-num {
+      font-family: var(--font-head);
+      font-size: 2rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent), var(--glow2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 4px;
+    }
+    .stat-label {
+      font-size: 0.78rem;
+      color: var(--muted);
+      letter-spacing: 0.04em;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Animated canvas background -->
+  <canvas id="bg-canvas"></canvas>
+
+  <!-- ─── NAV ─────────────────────────────────────────────────── -->
+  <nav>
+    <div class="nav-logo">
+      <div class="nav-logo-img">
+        <!--
+          LOGO: Replace the src below with your GitHub raw image link
+          Example: https://raw.githubusercontent.com/waris-brox/Echo-app/main/assets/echo-logo.png
+        -->
+        <img
+          src="YOUR_GITHUB_LOGO_URL_HERE"
+          alt="Echo Logo"
+          onerror="this.parentElement.innerHTML='<div style=\'display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-family:Syne,sans-serif;font-weight:800;font-size:1.1rem;background:linear-gradient(135deg,#a78bfa,#c97bff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;\'>E</div>'"
+        />
+      </div>
+      <span class="nav-brand">Echo</span>
+    </div>
+    <ul class="nav-links">
+      <li><a href="#features">Features</a></li>
+      <li><a href="#how">How It Works</a></li>
+      <li><a href="#download">Download</a></li>
+    </ul>
+    <a class="nav-cta" href="#download">Get Echo</a>
+  </nav>
+
+  <main>
+
+    <!-- ─── HERO ───────────────────────────────────────────────── -->
+    <section id="hero">
+      <div class="hero-eyebrow">
+        <span class="dot"></span>
+        Personal AI Assistant · Powered by Llama3
+      </div>
+
+      <h1 class="hero-title">
+        Meet <span class="gradient-text">Echo</span>
+      </h1>
+      <p class="hero-subtitle-line">Your phone. Your rules. Your AI friend.</p>
+      <p class="hero-desc">
+        Echo is not just an assistant. It's the friend who picks up every time — cracks jokes in Hinglish, handles your calls, controls your phone, and actually gets you.
+      </p>
+
+      <div class="hero-buttons">
+        <a class="btn-primary" href="#download">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download Free
+        </a>
+        <a class="btn-secondary" href="#features">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+          See Features
+        </a>
+      </div>
+
+      <!-- 3D Orb -->
+      <div class="hero-orb-wrap" id="orbWrap">
+        <div class="orb-ring orb-ring-3"></div>
+        <div class="orb-ring orb-ring-2"></div>
+        <div class="orb-ring orb-ring-1"></div>
+        <div class="orb-core">
+          <div class="orb-logo-inner" id="orbLogoInner">
+            <!--
+              ORB LOGO: Replace src with your GitHub raw image link
+              Example: https://raw.githubusercontent.com/waris-brox/Echo-app/main/assets/echo-logo.png
+            -->
+            <img
+              id="orbLogoImg"
+              src="YOUR_GITHUB_LOGO_URL_HERE"
+              alt="Echo"
+              onerror="document.getElementById('orbLogoInner').innerHTML='<div class=\'orb-logo-placeholder\'>E</div>'"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats bar -->
+      <div class="stats-bar reveal">
+        <div class="stat-item">
+          <div class="stat-num">10+</div>
+          <div class="stat-label">Device Controls</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num">Llama3</div>
+          <div class="stat-label">AI Brain</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num">Hinglish</div>
+          <div class="stat-label">Native Personality</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num">24/7</div>
+          <div class="stat-label">Always Ready</div>
+        </div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ─── FEATURES ───────────────────────────────────────────── -->
+    <section id="features">
+      <div class="section-header reveal">
+        <p class="section-eyebrow">What Echo Can Do</p>
+        <h2 class="section-title">More than an assistant.<br/>A real companion.</h2>
+        <p class="section-desc">Every feature is built to feel natural — like talking to someone who actually knows you.</p>
+      </div>
+
+      <div class="features-grid">
+
+        <div class="feature-card reveal">
+          <div class="feature-icon fi-purple">📱</div>
+          <h3 class="feature-title">Open Any App</h3>
+          <p class="feature-desc">Just say the name. Echo launches any app on your device instantly — no touch, no search, no friction.</p>
+          <div class="card-glow glow-purple"></div>
+        </div>
+
+        <div class="feature-card reveal">
+          <div class="feature-icon fi-pink">📞</div>
+          <h3 class="feature-title">Make Calls</h3>
+          <p class="feature-desc">"Call bhai" and it's already ringing. Echo handles calls to anyone in your contacts, hands-free.</p>
+          <div class="card-glow glow-pink"></div>
+        </div>
+
+        <div class="feature-card reveal">
+          <div class="feature-icon fi-teal">▶️</div>
+          <h3 class="feature-title">YouTube & Search</h3>
+          <p class="feature-desc">Search YouTube or jump to Google instantly. Ask for a song, a video, a tutorial — done in seconds.</p>
+          <div class="card-glow glow-teal"></div>
+        </div>
+
+        <div class="feature-card reveal">
+          <div class="feature-icon fi-purple">🔍</div>
+          <h3 class="feature-title">Google Search</h3>
+          <p class="feature-desc">Ask anything and Echo fires up a Google search right away. Real answers, no guessing, just go.</p>
+          <div class="card-glow glow-purple"></div>
+        </div>
+
+        <div class="feature-card reveal">
+          <div class="feature-icon fi-gold">🌟</div>
+          <h3 class="feature-title">Device Controls</h3>
+          <p class="feature-desc">Adjust brightness, screen timeout, and volume with a single voice command. Your phone, fully hands-free.</p>
+          <div class="card-glow glow-gold"></div>
+        </div>
+
+        <div class="feature-card reveal">
+          <div class="feature-icon fi-pink">📸</div>
+          <h3 class="feature-title">Take Screenshots</h3>
+          <p class="feature-desc">Capture your screen any time without lifting a finger. Just say the word and it's saved to your gallery.</p>
+          <div class="card-glow glow-pink"></div>
+        </div>
+
+        <div class="feature-card reveal">
+          <div class="feature-icon fi-teal">💬</div>
+          <h3 class="feature-title">WhatsApp Messaging</h3>
+          <p class="feature-desc">Send messages on WhatsApp without opening the app. Dictate, confirm, sent. That's it.</p>
+          <div class="card-glow glow-teal"></div>
+        </div>
+
+        <div class="feature-card reveal">
+          <div class="feature-icon fi-purple">🧠</div>
+          <h3 class="feature-title">Talk Like a Friend</h3>
+          <p class="feature-desc">Sarcastic, funny, speaks Hinglish naturally — Echo doesn't sound like a bot. It sounds like your guy.</p>
+          <div class="card-glow glow-purple"></div>
+        </div>
+
+        <div class="feature-card reveal">
+          <div class="feature-icon fi-gold">⏰</div>
+          <h3 class="feature-title">Alarms & Reminders</h3>
+          <p class="feature-desc">Set alarms or drop a reminder mid-conversation. Echo keeps track so you don't have to.</p>
+          <div class="card-glow glow-gold"></div>
+        </div>
+
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ─── HOW IT WORKS ───────────────────────────────────────── -->
+    <div id="how" style="padding: 100px 6vw;">
+      <div class="how-visual">
+        <div class="how-blob how-blob-1"></div>
+        <div class="how-blob how-blob-2"></div>
+        <div class="phone-mockup reveal">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="chat-ts">Today · 11:42 PM</div>
+            <div class="chat-bubble-out">Bhai, set alarm at 7 AM</div>
+            <div class="chat-bubble-in">Done boss 🤙 7 baje ki alarm laga di. Neend achi aana chahiye.</div>
+            <div class="chat-bubble-out">Open YouTube search "Lo-fi beats"</div>
+            <div class="chat-bubble-in">Kholte hain YouTube, boss. Lo-fi beats aa raha hai.</div>
+            <div class="chat-ts">Just now</div>
+            <div class="chat-typing">
+              <div class="typing-dot"></div>
+              <div class="typing-dot"></div>
+              <div class="typing-dot"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="how-steps reveal">
+        <div class="section-header" style="margin-bottom: 40px;">
+          <p class="section-eyebrow">How It Works</p>
+          <h2 class="section-title">Speak. Echo acts.</h2>
+          <p class="section-desc">No menus. No tapping around. Echo understands natural language — Hinglish, casual, real.</p>
+        </div>
+        <div class="how-step">
+          <div class="step-num">01</div>
+          <div class="step-content">
+            <h4>Wake Echo Up</h4>
+            <p>Say the wake word or tap the mic. Echo is always listening in the background, ready to move.</p>
+          </div>
+        </div>
+        <div class="how-step">
+          <div class="step-num">02</div>
+          <div class="step-content">
+            <h4>Say What You Need</h4>
+            <p>Talk naturally. Mix Hindi and English. Be lazy. Echo gets context, not just keywords.</p>
+          </div>
+        </div>
+        <div class="how-step">
+          <div class="step-num">03</div>
+          <div class="step-content">
+            <h4>Echo Handles It</h4>
+            <p>Apps open, calls connect, messages send, alarms set — all before you finish thinking about it.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- ─── DOWNLOAD ────────────────────────────────────────────── -->
+    <section id="download">
+      <div class="download-card reveal">
+        <div class="download-card-glow"></div>
+        <div class="download-version">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          Android APK · Free Download
+        </div>
+        <h2 class="download-title">
+          Get Echo on<br/><span style="background: linear-gradient(135deg, var(--accent), var(--glow2), var(--gold)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">your Android</span>
+        </h2>
+        <p class="download-desc">
+          One APK. Full features. No subscription, no account needed. Just install and start talking.
+        </p>
+
+        <!--
+          DOWNLOAD BUTTON:
+          Replace href="#" with your actual APK download link or release page URL.
+          Example: https://github.com/waris-brox/Echo-app/releases/latest/download/echo.apk
+        -->
+        <a class="download-btn" href="#" id="downloadBtn">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download Echo APK
+        </a>
+
+        <div class="download-meta">
+          <div class="dl-meta-item">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            Android 8.0+
+          </div>
+          <div class="dl-meta-item">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+            Always up to date
+          </div>
+          <div class="dl-meta-item">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            100% Free
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ─── FOOTER ─────────────────────────────────────────────────── -->
+  <footer>
+    <div class="footer-brand">Echo</div>
+    <p class="footer-text">Your personal AI friend, built with ❤️ by Waris</p>
+    <div class="footer-links">
+      <a href="https://github.com/waris-brox/Echo-app" target="_blank">GitHub</a>
+      <a href="#features">Features</a>
+      <a href="#download">Download</a>
+    </div>
+  </footer>
+
+  <!-- ─── SCRIPTS ────────────────────────────────────────────────── -->
+  <script>
+    /* === CANVAS PARTICLE BACKGROUND === */
+    const canvas = document.getElementById('bg-canvas');
+    const ctx = canvas.getContext('2d');
+    let W, H, particles = [];
+
+    function resize() {
+      W = canvas.width  = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    class Particle {
+      constructor() { this.reset(true); }
+      reset(initial) {
+        this.x = Math.random() * W;
+        this.y = initial ? Math.random() * H : H + 10;
+        this.r = Math.random() * 1.5 + 0.3;
+        this.speed = Math.random() * 0.4 + 0.1;
+        this.alpha = Math.random() * 0.6 + 0.1;
+        this.drift = (Math.random() - 0.5) * 0.3;
+        const hue = Math.random() < 0.6 ? '260' : '290';
+        this.color = `hsla(${hue}, 90%, 75%, ${this.alpha})`;
+      }
+      update() {
+        this.y -= this.speed;
+        this.x += this.drift;
+        if (this.y < -10) this.reset(false);
+      }
+      draw() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+        ctx.fillStyle = this.color;
+        ctx.fill();
+      }
+    }
+
+    for (let i = 0; i < 120; i++) particles.push(new Particle());
+
+    /* Subtle grid lines */
+    function drawGrid() {
+      ctx.strokeStyle = 'rgba(124,92,252,0.04)';
+      ctx.lineWidth = 1;
+      const sz = 80;
+      for (let x = 0; x < W; x += sz) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+      }
+      for (let y = 0; y < H; y += sz) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+      }
+    }
+
+    function loop() {
+      ctx.clearRect(0, 0, W, H);
+      drawGrid();
+      particles.forEach(p => { p.update(); p.draw(); });
+      requestAnimationFrame(loop);
+    }
+    loop();
+
+    /* === SCROLL REVEAL === */
+    const reveals = document.querySelectorAll('.reveal');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((e, i) => {
+        if (e.isIntersecting) {
+          e.target.style.transitionDelay = `${i * 0.04}s`;
+          e.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.12 });
+    reveals.forEach(el => observer.observe(el));
+
+    /* === FLOATING ORB PARTICLES === */
+    const orbWrap = document.getElementById('orbWrap');
+    function spawnOrbParticle() {
+      const p = document.createElement('div');
+      p.className = 'orb-particle';
+      const sz = Math.random() * 4 + 2;
+      p.style.cssText = `
+        width:${sz}px; height:${sz}px;
+        left:${Math.random() * 160 + 10}px;
+        top:${Math.random() * 160 + 10}px;
+        animation-duration:${Math.random() * 2 + 1.5}s;
+        opacity:${Math.random() * 0.7 + 0.3};
+      `;
+      orbWrap.appendChild(p);
+      setTimeout(() => p.remove(), 3500);
+    }
+    setInterval(spawnOrbParticle, 400);
+
+    /* === DOWNLOAD BUTTON FEEDBACK === */
+    document.getElementById('downloadBtn').addEventListener('click', function(e) {
+      const href = this.getAttribute('href');
+      if (href === '#') {
+        e.preventDefault();
+        const orig = this.innerHTML;
+        this.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg> Coming Soon — Check GitHub`;
+        this.style.background = 'linear-gradient(135deg, #3a2f6a, #5a3a7a)';
+        setTimeout(() => {
+          this.innerHTML = orig;
+          this.style.background = '';
+        }, 3000);
+      }
+    });
+  </script>
+</body>
+</html>
+

@@ -1,30 +1,42 @@
 package com.echo.assistant;
 
 import android.content.Intent;
-import android.os.Bundle;
-import android.view.animation.AlphaAnimation;
-import android.view.animation.ScaleAnimation;
-import android.view.animation.AnimationSet;
-import android.view.View;
 import android.content.SharedPreferences;
+import android.os.Bundle;
+import android.view.View;
+import android.view.animation.AlphaAnimation;
+import android.view.animation.AnimationSet;
+import android.view.animation.ScaleAnimation;
 import androidx.appcompat.app.AppCompatActivity;
 
 public class SplashActivity extends AppCompatActivity {
 
     @Override
-protected void onCreate(Bundle savedInstanceState) {
-    super.onCreate(savedInstanceState);
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
 
-    SharedPreferences prefs =
-        getSharedPreferences("echo_prefs", MODE_PRIVATE);
+        SharedPreferences prefs = getSharedPreferences("echo_prefs", MODE_PRIVATE);
+        boolean permissionsDone = prefs.getBoolean("permissions_done", false);
+        String userName = prefs.getString("user_name", "");
 
-    if (!prefs.getString("user_name", "").isEmpty()) {
-        startActivity(new Intent(this, MainActivity.class));
-        finish();
-        return;
-    }
+        // First launch — show permissions screen
+        if (!permissionsDone) {
+            startActivity(new Intent(this, PermissionActivity.class));
+            finish();
+            return;
+        }
 
-    setContentView(R.layout.activity_splash);
+        // Already logged in — go straight to chat
+        if (!userName.isEmpty()) {
+            Intent i = new Intent(this, MainActivity.class);
+            i.putExtra("user_name", userName);
+            startActivity(i);
+            finish();
+            return;
+        }
+
+        // Show splash
+        setContentView(R.layout.activity_splash);
 
         View root = findViewById(R.id.splash_logo);
         AnimationSet anim = new AnimationSet(true);
@@ -40,8 +52,8 @@ protected void onCreate(Bundle savedInstanceState) {
         root.startAnimation(anim);
 
         findViewById(R.id.btn_get_started).setOnClickListener(v -> {
-    startActivity(new Intent(this, LoginActivity.class));
-    finish();
-	});
+            startActivity(new Intent(this, LoginActivity.class));
+            finish();
+        });
     }
 }
